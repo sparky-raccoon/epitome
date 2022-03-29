@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/sparky-raccoon/epitome/issues"
   },
-  "homepage": "https://github.com/sparky-raccoon/epitome#readme"
+  "homepage": "https://github.com/sparky-raccoon/epitome#readme",
+  "dependencies": {
+    "discord.js": "^13.6.0"
+  }
 }
