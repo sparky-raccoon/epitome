@@ -1,8 +1,8 @@
-const { MessageEmbed } = require('discord.js');
-const { bold } = require('@discordjs/builders');
-const { AVATAR_URL } = require('../commons');
+import { MessageEmbed } from 'discord.js';
+import { bold } from '@discordjs/builders';
+import { AVATAR_URL } from '../commons';
 
-module.exports = {
+export const message = {
     name: 'add',
     data: new MessageEmbed()
         .setColor('#ffffff')
@@ -12,4 +12,3 @@ module.exports = {
         .setFooter({ text: 'Ajout de source (1/4)', iconURL: AVATAR_URL })
         .setTimestamp()
 };
-

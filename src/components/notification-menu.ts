@@ -1,4 +1,4 @@
-const { MessageActionRow, MessageSelectMenu } = require("discord.js");
+import { MessageActionRow, MessageSelectMenu } from 'discord.js';
 
 const notificationMenu = new MessageActionRow()
     .addComponents(
@@ -25,4 +25,4 @@ const notificationMenu = new MessageActionRow()
             ])
     )
 
-module.exports = { notificationMenu }
+export { notificationMenu }

@@ -13,4 +13,4 @@ const confirmButton = new MessageActionRow()
         ]
     )
 
-module.exports = { confirmButton }
+export { confirmButton }

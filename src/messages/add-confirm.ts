@@ -1,8 +1,8 @@
-const { MessageEmbed } = require("discord.js");
-const { blockQuote, bold } = require('@discordjs/builders');
-const { AVATAR_URL } = require('../commons');
+import { MessageEmbed } from 'discord.js';
+import { blockQuote, bold } from '@discordjs/builders';
+import { AVATAR_URL } from '../commons';
 
-module.exports = {
+export const message = {
     name: 'add-confirm',
     data: new MessageEmbed()
         .setColor('#ffffff')

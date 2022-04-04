@@ -1,8 +1,7 @@
-const { MessageEmbed } = require("discord.js");
-const { blockQuote, bold } = require('@discordjs/builders');
-const { AVATAR_URL } = require('../commons');
+import { MessageEmbed } from 'discord.js';
+import { AVATAR_URL } from '../commons';
 
-module.exports = {
+export const message = {
     name: 'add-complete',
     data: new MessageEmbed()
         .setColor('#ffffff')
