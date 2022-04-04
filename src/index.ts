@@ -1,7 +1,7 @@
 import { readdirSync } from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
-import { Client, Collection, MessageEmbed } from 'discord.js';
+import { Client, Collection, MessageEmbed, MessageActionRow } from 'discord.js';
 import { confirmButton } from './components/confirm-button';
 import { notificationMenu } from './components/notification-menu';
 
@@ -29,15 +29,15 @@ client.on("ready", () => {
     client.user?.setActivity('les internets ✨', { type: 'LISTENING' });
 });
 
-client.on("messageCreate", (message: { content: string; channel: { send: (arg0: { embeds: any[]; components?: any[]; }) => void; }; }) => {
-    if (message.content === "hi") {
-        message.channel.send({ embeds: [client.availableMessages.get('add')], components: [notificationMenu] });
-        message.channel.send({ embeds: [client.availableMessages.get('youtube')] });
-        message.channel.send({ embeds: [client.availableMessages.get('ig')] });
-        message.channel.send({ embeds: [client.availableMessages.get('twitter')] });
-        message.channel.send({ embeds: [client.availableMessages.get('rss')] });
-        message.channel.send({ embeds: [client.availableMessages.get('add-confirm')], components: [confirmButton]})
-        message.channel.send({ embeds: [client.availableMessages.get('add-complete')] });
+client.on("messageCreate", (message: { content: string; channel: { send: (arg0: { embeds: MessageEmbed[]; components?: MessageActionRow[]; }) => void; }; }) => {
+    if (message.content === "add-messages") {
+        message.channel.send({ embeds: [client.availableMessages.get('add') as MessageEmbed], components: [notificationMenu] });
+        message.channel.send({ embeds: [client.availableMessages.get('youtube') as MessageEmbed] });
+        message.channel.send({ embeds: [client.availableMessages.get('ig') as MessageEmbed] });
+        message.channel.send({ embeds: [client.availableMessages.get('twitter') as MessageEmbed] });
+        message.channel.send({ embeds: [client.availableMessages.get('rss') as MessageEmbed] });
+        message.channel.send({ embeds: [client.availableMessages.get('add-confirm') as MessageEmbed], components: [confirmButton]})
+        message.channel.send({ embeds: [client.availableMessages.get('add-complete') as MessageEmbed] });
     }
 })
 

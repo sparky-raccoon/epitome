@@ -1,4 +1,4 @@
-const { MessageActionRow, MessageButton } = require("discord.js");
+import { MessageActionRow, MessageButton } from 'discord.js';
 
 const confirmButton = new MessageActionRow()
     .addComponents([

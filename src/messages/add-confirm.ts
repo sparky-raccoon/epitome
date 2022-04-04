@@ -1,5 +1,5 @@
 import { MessageEmbed } from 'discord.js';
-import { blockQuote, bold } from '@discordjs/builders';
+import { blockQuote } from '@discordjs/builders';
 import { AVATAR_URL } from '../commons';
 
 export const message = {
