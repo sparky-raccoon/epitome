@@ -1,9 +1,11 @@
-import { readdirSync } from 'fs';
+import { readdirSync, access, readFile, writeFile } from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { Client, Collection, MessageEmbed, MessageActionRow } from 'discord.js';
 import { confirmButton } from './components/confirm-button';
 import { notificationMenu } from './components/notification-menu';
+import { addSource, deleteSource } from './utils';
+import { SourceTypes } from './types';
 
 dotenv.config();
 const messageFiles = readdirSync(path.resolve(__dirname, './messages')).filter((f: string) => f.endsWith('.ts'));
@@ -38,6 +40,15 @@ client.on("messageCreate", (message: { content: string; channel: { send: (arg0: 
         message.channel.send({ embeds: [client.availableMessages.get('rss') as MessageEmbed] });
         message.channel.send({ embeds: [client.availableMessages.get('add-confirm') as MessageEmbed], components: [confirmButton]})
         message.channel.send({ embeds: [client.availableMessages.get('add-complete') as MessageEmbed] });
+    } else if (message.content === "add") {
+        addSource({
+            type: SourceTypes.YOUTUBE,
+            name: 'TheCodingTrain',
+            url: 'https://www.youtube.com/c/TheCodingTrain',
+            timestamp: Math.round((new Date()).getTime() / 1000).toString()
+        })
+    } else if (message.content === "delete") {
+        deleteSource('TheCodingTrain');
     }
 })
 
