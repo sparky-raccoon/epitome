@@ -1,5 +1,5 @@
 import { ColorResolvable, EmbedFieldData, MessageEmbed } from 'discord.js';
-import { blockQuote, bold, quote } from '@discordjs/builders';
+import { blockQuote, bold, inlineCode } from '@discordjs/builders';
 
 import { AVATAR_URL, CONFIGURING_IMG_URL, ERASING_IMG_URL, TAKING_NOTES_IMG_URL, OUPS_IMG_URL } from './commons';
 import { MessageTypes, Source, SourceList, SourceTypes } from './types';
@@ -42,7 +42,7 @@ const getMessage = (type: MessageTypes, data?: Source | SourceList | string): Me
         }
     }
 
-    const errorMockMessage = "Il y a eu un pépin quelque part";
+    const errorMockMessage = "Il y a eu un pépin quelque part ...";
     const cancelMockMessage = "Tu as mis bien trop de temps à me répondre!";
 
     const formatSourceType = (type: SourceTypes): string => {
@@ -118,8 +118,8 @@ const getMessage = (type: MessageTypes, data?: Source | SourceList | string): Me
             break;
         }
         case MessageTypes.ADD_COMPLETE: {
-            title = "C'est fait !";
-            footerText = 'Ajout de source';
+            title = "Done! ✨";
+            footerText = "Ajout de source";
             break;
         }
         case MessageTypes.ADD_CANCEL: {
@@ -136,8 +136,15 @@ const getMessage = (type: MessageTypes, data?: Source | SourceList | string): Me
             footerText = 'Suppression de source';
             break;
         }
+        case MessageTypes.DELETE_CONFIRM: {
+            const { type, name, url } = (data as Source) || sourceMockData;
+            title = "La source de publications a supprimer est-elle bien la suivante ?";
+            description = blockQuote(`Type: ${formatSourceType(type)}\nChaîne: ${name}\nUrl: ${url}`);
+            footerText = 'Suppression de source';
+            break;
+        }
         case MessageTypes.DELETE_COMPLETE: {
-            title = "C'est fait !";
+            title = "Done! ✨";
             footerText = 'Suppression de source';
             break;
         }
@@ -149,23 +156,26 @@ const getMessage = (type: MessageTypes, data?: Source | SourceList | string): Me
         }
         case MessageTypes.HELP: {
             title = "Hello ✨";
-            description = "Je m’appelle @Epitome. Je suis un petit bot qui t’aidera à rester à jour vis-à-vis des réseaux sociaux, et des médias / blogs que tu suis.\n"
+            description = `Je m’appelle ${bold('@Epitome')}. Je suis un petit bot qui t’aidera à rester à jour vis-à-vis des réseaux sociaux, et des médias / blogs que tu suis.\n\n`
                 + "Voici une petite liste de ce que je sais faire !\n"
-                + `Configurer une nouvelle source à suivre; avec la commande ${quote('!add')}\n`
-                + `Supprimer une source suivie; avec la commande ${quote('!delete')}\n`
-                + `Lister toutes les sources suivies; avec la commande ${quote('!list')}\n`
-                + `Enfin, répondre à un petit ${quote('!help')} comme maintenant.`
+                + `- Configurer une nouvelle source à suivre avec la commande ${inlineCode('!add')}\n`
+                + `- Supprimer une source suivie avec la commande ${inlineCode('!delete')}\n`
+                + `- Lister toutes les sources suivies avec la commande ${inlineCode('!list')}\n`
+                + `- Enfin, répondre à un petit ${inlineCode('!help')} comme maintenant.`
+            footerText = "Help";
             break;
         }
         case MessageTypes.LIST: {
             title = "Liste des sources de publications configurées";
             fields = formatSourceList((data as SourceList) || sourceListMockData);
+            footerText = "Listing";
             break;
         }
         case MessageTypes.OUPS: {
             title = "Oups! Quelque chose a mal tourné.";
             description = `${(data as string) || errorMockMessage}`;
             imageUrl = OUPS_IMG_URL;
+            footerText = "Aïe aïe aïe";
             break;
         }
     }
