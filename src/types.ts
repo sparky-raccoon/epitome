@@ -1,7 +1,9 @@
 enum MessageTypes {
+    NULL = '',
     ADD = 'add',
     ADD_COMPLETE = 'add-complete',
     ADD_CONFIRM = 'add-confirm',
+    ADD_OUPS = 'add-oups',
     ADD_CANCEL = 'add-cancel',
     ADD_INSTAGRAM = 'add-ig',
     ADD_RSS = 'add-rss',
@@ -10,11 +12,13 @@ enum MessageTypes {
     DELETE = 'delete',
     DELETE_COMPLETE = 'delete-complete',
     DELETE_CONFIRM = 'delete-confirm',
+    DELETE_OUPS = 'delete-oups',
     DELETE_CANCEL = 'delete-cancel',
-    OUPS = 'oups',
     LIST = 'list',
     HELP = 'help',
 }
+
+type MessageData = string | Source | SourceList;
 
 enum SourceTypes {
     INSTAGRAM = 'ig',
@@ -36,7 +40,6 @@ interface Source {
     type: SourceTypes,
     name: string,
     url: string,
-    timestamp: string,
 }
 
-export { MessageTypes, SourceTypes, Source, SourceList }
+export { MessageTypes, SourceTypes, Source, SourceList, MessageData }

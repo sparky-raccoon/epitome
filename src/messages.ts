@@ -1,22 +1,30 @@
-import { ColorResolvable, EmbedFieldData, MessageEmbed } from 'discord.js';
+import { ColorResolvable, EmbedFieldData, MessageActionRow, MessageEmbed } from 'discord.js';
 import { blockQuote, bold, inlineCode } from '@discordjs/builders';
 
-import { AVATAR_URL, CONFIGURING_IMG_URL, ERASING_IMG_URL, TAKING_NOTES_IMG_URL, OUPS_IMG_URL } from './commons';
-import { MessageTypes, Source, SourceList, SourceTypes } from './types';
+import { AVATAR_URL, CONFIGURING_IMG_URL, ERASING_IMG_URL } from './constants';
+import { MessageTypes, Source, SourceList, SourceTypes, MessageData } from './types';
+import { formatSourceTypeToReadable, formatSourceListToEmbedField } from './utils';
+import { notificationMenu } from './components/notification-menu';
+import { confirmButton } from './components/confirm-button';
 
-const getMessage = (type: MessageTypes, data?: Source | SourceList | string): MessageEmbed => {
+const getMessage = (type: MessageTypes, data?: MessageData): {
+    embed?: MessageEmbed,
+    component?: MessageActionRow,
+} => {
+    if (type === MessageTypes.NULL) return {};
+
     let color: ColorResolvable = '#ffffff';
     let title = '';
     let description = '';
     let fields: EmbedFieldData[] = [];
     let imageUrl = '';
     let footerText = '';
+    let component;
 
     const sourceMockData: Source = {
         type: SourceTypes.YOUTUBE,
         name: "The Code Train",
         url: "https://youtube/channel/the-code-train",
-        timestamp: (new Date()).toISOString(),
     }
 
     const sourceListMockData: SourceList = {
@@ -44,52 +52,21 @@ const getMessage = (type: MessageTypes, data?: Source | SourceList | string): Me
 
     const errorMockMessage = "Il y a eu un pépin quelque part ...";
     const cancelMockMessage = "Tu as mis bien trop de temps à me répondre!";
-
-    const formatSourceType = (type: SourceTypes): string => {
-        switch (type) {
-            case SourceTypes.YOUTUBE:
-                return 'YouTube';
-            case SourceTypes.INSTAGRAM:
-                return 'Instagram';
-            case SourceTypes.TWITTER:
-                return 'Twitter';
-            case SourceTypes.RSS:
-                return 'RSS';
-        }
-    }
-
-    const formatSourceList = (list: SourceList): EmbedFieldData[] => {
-        return Object.keys(list).reduce((acc: EmbedFieldData[], key: string) => {
-            const name = formatSourceType(key as SourceTypes);
-            const sourcesByType = list[key as SourceTypes]
-            const sourceNamesByType = Object.keys(sourcesByType || {});
-            if (sourceNamesByType.length > 0)
-                return [...acc, { name, value: sourceNamesByType.join('\n') }];
-            else
-                return acc;
-        }, [])
-    }
+    const cancelInfoMessage = `\nTu pourras envoyer la commande ${inlineCode('!cancel')} à tout moment pour annuler cette procédure.`;
 
     switch (type) {
         case MessageTypes.ADD: {
             title = "Config. d'une nouvelle source de publications à suivre"
-            description = `Choisis le type de publications à suivre (YouTube, Instagram, Twitter, ou un flux RSS) dans le sélecteur juste en-dessous ! 👇\nTu pourras envoyer la commande ${bold('!cancel')} à tout moment pour annuler cette procédure.`;
+            description = `Choisis le type de publications à suivre (YouTube, Instagram, Twitter, ou un flux RSS) dans le sélecteur juste en-dessous ! 👇${cancelInfoMessage}`;
             imageUrl = CONFIGURING_IMG_URL;
             footerText = 'Ajout de source';
-            break;
-        }
-        case MessageTypes.ADD_CONFIRM: {
-            const { type, name, url } = (data as Source) || sourceMockData;
-            title = "Les informations de la source de publications configurée sont-elles exactes ?";
-            description = blockQuote(`Type: ${formatSourceType(type)}\nChaîne: ${name}\nUrl: ${url}`);
-            footerText = 'Ajout de source';
+            component = notificationMenu;
             break;
         }
         case MessageTypes.ADD_INSTAGRAM: {
             color = '#E1306C';
             title = "Ajout d'un compte Instagram dans la liste des sources suivies";
             description = `Indique sous forme de message un nom de compte existant.\nPar exemple: ${bold('@jane.doe')}`;
-            imageUrl = TAKING_NOTES_IMG_URL;
             footerText = 'Ajout de source';
             break;
         }
@@ -97,7 +74,6 @@ const getMessage = (type: MessageTypes, data?: Source | SourceList | string): Me
             color = '#ee802f';
             title = "Ajout d'un flux RSS dans la liste des sources suivies";
             description = `Indique sous forme de message une url valide de feed RSS.\nPar exemple: ${bold('https://www.lemonde.fr/rss/en_continu.xml')}`;
-            imageUrl = TAKING_NOTES_IMG_URL;
             footerText = 'Ajout de source';
             break;
         }
@@ -105,7 +81,6 @@ const getMessage = (type: MessageTypes, data?: Source | SourceList | string): Me
             color = '#1DA1F2';
             title = "Ajout d'un compte Twitter dans la liste des sources suivies";
             description = `Indique sous forme de message un nom de compte existant.\nPar exemple: ${bold('@jane.doe')}`;
-            imageUrl = TAKING_NOTES_IMG_URL;
             footerText = 'Ajout de source';
             break;
         }
@@ -113,12 +88,21 @@ const getMessage = (type: MessageTypes, data?: Source | SourceList | string): Me
             color = '#FF0000';
             title = "Ajout d'une chaîne YouTube dans la liste des sources suivies";
             description = `Indique sous forme de message une url valide de chaîne.\nPar exemple: ${bold('https://www.youtube.com/channel/xxx')}`;
-            imageUrl = TAKING_NOTES_IMG_URL;
             footerText = 'Ajout de source';
             break;
         }
+        case MessageTypes.ADD_CONFIRM: {
+            const { type, name, url } = (data as Source) || sourceMockData;
+            title = "Les informations de la source de publications configurée sont-elles exactes ?";
+            description = blockQuote(`Type: ${formatSourceTypeToReadable(type)}\nChaîne: ${name}\nUrl: ${url}`);
+            footerText = 'Ajout de source';
+            component = confirmButton;
+            break;
+        }
         case MessageTypes.ADD_COMPLETE: {
-            title = "Done! ✨";
+            const { type, name, url } = (data as Source) || sourceMockData;
+            title = "Une nouvelle source de publications à suivre a été ajoutée !";
+            description = blockQuote(`Type: ${formatSourceTypeToReadable(type)}\nChaîne: ${name}\nUrl: ${url}`);
             footerText = "Ajout de source";
             break;
         }
@@ -128,10 +112,16 @@ const getMessage = (type: MessageTypes, data?: Source | SourceList | string): Me
             footerText = "Ajout de source";
             break;
         }
+        case MessageTypes.ADD_OUPS: {
+            title = "Oups!";
+            description = `${(data as string) || errorMockMessage}`;
+            footerText = "Ajout de source";
+            break;
+        }
         case MessageTypes.DELETE: {
-            title = "Suppression d'une source suivie de publications"
-            description = "Indique le nom de la source à supprimer (nom de compte, de chaîne ou de flux RSS).\nPour rappel voici la liste des sources présentement configurées. 👇";
-            fields = formatSourceList((data as SourceList) || sourceListMockData);
+            title = "Suppression d'une source de publications existante"
+            description = `Indique le nom de la source à supprimer (nom de compte, de chaîne ou de flux RSS).\nPour rappel voici la liste des sources présentement configurées. 👇${cancelInfoMessage}`;
+            fields = formatSourceListToEmbedField((data as SourceList) || sourceListMockData);
             imageUrl = ERASING_IMG_URL;
             footerText = 'Suppression de source';
             break;
@@ -139,18 +129,27 @@ const getMessage = (type: MessageTypes, data?: Source | SourceList | string): Me
         case MessageTypes.DELETE_CONFIRM: {
             const { type, name, url } = (data as Source) || sourceMockData;
             title = "La source de publications a supprimer est-elle bien la suivante ?";
-            description = blockQuote(`Type: ${formatSourceType(type)}\nChaîne: ${name}\nUrl: ${url}`);
+            description = blockQuote(`Type: ${formatSourceTypeToReadable(type)}\nChaîne: ${name}\nUrl: ${url}`);
             footerText = 'Suppression de source';
+            component = confirmButton;
             break;
         }
         case MessageTypes.DELETE_COMPLETE: {
-            title = "Done! ✨";
+            const { type, name, url } = (data as Source) || sourceMockData;
+            title = "Une source de publications vient d'être supprimée !";
+            description = blockQuote(`Type: ${formatSourceTypeToReadable(type)}\nChaîne: ${name}\nUrl: ${url}`);
             footerText = 'Suppression de source';
             break;
         }
         case MessageTypes.DELETE_CANCEL: {
-            title = "Procédure de suppression. d'une source de publications existante annulée";
+            title = "Procédure de suppression d'une source de publications existante annulée";
             description = `${(data as string) || cancelMockMessage}`
+            footerText = "Suppression de source";
+            break;
+        }
+        case MessageTypes.DELETE_OUPS: {
+            title = "Oups!";
+            description = `${(data as string) || errorMockMessage}`;
             footerText = "Suppression de source";
             break;
         }
@@ -167,35 +166,31 @@ const getMessage = (type: MessageTypes, data?: Source | SourceList | string): Me
         }
         case MessageTypes.LIST: {
             title = "Liste des sources de publications configurées";
-            fields = formatSourceList((data as SourceList) || sourceListMockData);
+            fields = formatSourceListToEmbedField((data as SourceList) || sourceListMockData);
             footerText = "Listing";
-            break;
-        }
-        case MessageTypes.OUPS: {
-            title = "Oups! Quelque chose a mal tourné.";
-            description = `${(data as string) || errorMockMessage}`;
-            imageUrl = OUPS_IMG_URL;
-            footerText = "Aïe aïe aïe";
             break;
         }
     }
 
-    const messageEmbed: MessageEmbed = new MessageEmbed()
+    const embed: MessageEmbed = new MessageEmbed()
         .setColor(color)
         .setTitle(title)
         .setFooter({ text: footerText, iconURL: AVATAR_URL })
         .setTimestamp();
 
     if (description)
-        messageEmbed.setDescription(description);
+        embed.setDescription(description);
 
     if (fields.length > 0)
-        messageEmbed.setFields(fields)
+        embed.setFields(fields)
 
     if (imageUrl)
-        messageEmbed.setImage(imageUrl);
+        embed.setImage(imageUrl);
 
-    return messageEmbed;
+    let res: { embed: MessageEmbed, component?: MessageActionRow } = { embed }
+    if (component)
+        res = { embed, component }
+    return res;
 }
 
 
