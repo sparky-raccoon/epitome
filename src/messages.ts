@@ -7,7 +7,7 @@ import { formatSourceTypeToReadable, formatSourceListToEmbedField } from './util
 import { selectSourceTypeMenu, selectSavedSourceMenu } from './components/select-menu';
 import { confirmButton } from './components/confirm-button';
 
-const autoDestructionMessage = "✸ Ce message va s'auto-détruire dans 3..2..1 ✸";
+const autoDestructionMessage = "Ce message va s'auto-détruire dans 5..4..3..";
 
 const getMessage = (type: MessageTypes, data?: MessageData): {
     embed?: MessageEmbed,
@@ -57,7 +57,7 @@ const getMessage = (type: MessageTypes, data?: MessageData): {
 
     switch (type) {
         case MessageTypes.ADD: {
-            title = "Config. d'une nouvelle source de publications à suivre"
+            title = "✸ Config. d'une nouvelle source de publications à suivre"
             description = `Choisis le type de publications à suivre (YouTube, Instagram, Twitter, ou un flux RSS) dans le sélecteur juste en-dessous! 👇${cancelInfoMessage}`;
             imageUrl = CONFIGURING_IMG_URL;
             footerText = 'Ajout de source';
@@ -66,35 +66,35 @@ const getMessage = (type: MessageTypes, data?: MessageData): {
         }
         case MessageTypes.ADD_INSTAGRAM: {
             color = '#E1306C';
-            title = "Ajout d'un compte Instagram dans la liste des sources suivies";
+            title = "✸ Ajout d'un compte Instagram dans la liste des sources suivies";
             description = `Indique sous forme de message un nom de compte existant.\nPar exemple: ${bold('@jane.doe')}`;
             footerText = 'Ajout de source';
             break;
         }
         case MessageTypes.ADD_RSS: {
             color = '#ee802f';
-            title = "Ajout d'un flux RSS dans la liste des sources suivies";
+            title = "✸ Ajout d'un flux RSS dans la liste des sources suivies";
             description = `Indique sous forme de message une url valide de feed RSS.\nPar exemple: ${bold('https://www.lemonde.fr/rss/en_continu.xml')}`;
             footerText = 'Ajout de source';
             break;
         }
         case MessageTypes.ADD_TWITTER: {
             color = '#1DA1F2';
-            title = "Ajout d'un compte Twitter dans la liste des sources suivies";
+            title = "✸ Ajout d'un compte Twitter dans la liste des sources suivies";
             description = `Indique sous forme de message un nom de compte existant.\nPar exemple: ${bold('@jane.doe')}`;
             footerText = 'Ajout de source';
             break;
         }
         case MessageTypes.ADD_YOUTUBE: {
             color = '#FF0000';
-            title = "Ajout d'une chaîne YouTube dans la liste des sources suivies";
+            title = "✸ Ajout d'une chaîne YouTube dans la liste des sources suivies";
             description = `Indique sous forme de message une url valide de chaîne.\nPar exemple: ${bold('https://www.youtube.com/channel/xxx')}`;
             footerText = 'Ajout de source';
             break;
         }
         case MessageTypes.ADD_CONFIRM: {
             const { type, name, url } = (data as Source) || sourceMockData;
-            title = "Les informations de la source de publications configurée sont-elles exactes ?";
+            title = "✸ Les informations de la source de publications configurée sont-elles exactes ?";
             description = blockQuote(`Type: ${formatSourceTypeToReadable(type)}\nChaîne: ${name}\nUrl: ${url}`);
             footerText = 'Ajout de source';
             component = confirmButton('Oui', 'Non (Annuler)');
@@ -102,25 +102,25 @@ const getMessage = (type: MessageTypes, data?: MessageData): {
         }
         case MessageTypes.ADD_COMPLETE: {
             const { type, name, url } = (data as Source) || sourceMockData;
-            title = "Une nouvelle source de publications à suivre a été ajoutée !";
+            title = "✸ Une nouvelle source de publications à suivre a été ajoutée !";
             description = blockQuote(`Type: ${formatSourceTypeToReadable(type)}\nChaîne: ${name}\nUrl: ${url}`);
             footerText = "Ajout de source";
             break;
         }
         case MessageTypes.ADD_CANCEL: {
-            title = "Config. d'une nouvelle source de publications annulée";
+            title = "✸ Config. d'une nouvelle source de publications annulée";
             description = autoDestructionMessage;
             footerText = "Ajout de source";
             break;
         }
         case MessageTypes.ADD_OUPS: {
-            title = "Oupsie!";
+            title = "✸ Oupsie!";
             description = `${(data as string) || defaultErrorMessage}`;
             footerText = "Ajout de source";
             break;
         }
         case MessageTypes.DELETE: {
-            title = "Suppression d'une source de publications existante"
+            title = "✸ Suppression d'une source de publications existante"
             description = `Choisis la source à supprimer dans le sélecteur juste en-dessous! 👇${cancelInfoMessage}`;;
             imageUrl = ERASING_IMG_URL;
             component = selectSavedSourceMenu(data as SourceList);
@@ -129,7 +129,7 @@ const getMessage = (type: MessageTypes, data?: MessageData): {
         }
         case MessageTypes.DELETE_CONFIRM: {
             const { type, name, url } = (data as Source) || sourceMockData;
-            title = "La source de publications a supprimer est-elle bien la suivante ?";
+            title = "✸ La source de publications a supprimer est-elle bien la suivante ?";
             description = blockQuote(`Type: ${formatSourceTypeToReadable(type)}\nChaîne: ${name}\nUrl: ${url}`);
             footerText = 'Suppression de source';
             component = confirmButton('Oui', 'Non (Annuler)');
@@ -137,36 +137,37 @@ const getMessage = (type: MessageTypes, data?: MessageData): {
         }
         case MessageTypes.DELETE_COMPLETE: {
             const { type, name, url } = (data as Source) || sourceMockData;
-            title = "Une source de publications vient d'être supprimée !";
+            title = "✸ Une source de publications vient d'être supprimée !";
             description = blockQuote(`Type: ${formatSourceTypeToReadable(type)}\nChaîne: ${name}\nUrl: ${url}`);
             footerText = 'Suppression de source';
             break;
         }
         case MessageTypes.DELETE_CANCEL: {
-            title = "Suppression d'une source de publications existante annulée";
+            title = "✸ Suppression d'une source de publications existante annulée";
             description = autoDestructionMessage;
             footerText = "Suppression de source";
             break;
         }
         case MessageTypes.DELETE_OUPS: {
-            title = "Oupsie!";
+            title = "✸ Oupsie!";
             description = `${(data as string) || defaultErrorMessage}`;
             footerText = "Suppression de source";
             break;
         }
         case MessageTypes.HELP: {
-            title = "Hello ✨";
-            description = `Je m’appelle ${bold('@Epitome')}. Je suis un petit bot qui t’aidera à rester à jour vis-à-vis des réseaux sociaux, et des médias / blogs que tu suis.\n\n`
-                + "Voici une petite liste de ce que je sais faire !\n"
-                + `- Configurer une nouvelle source à suivre avec la commande ${inlineCode('!add')}\n`
-                + `- Supprimer une source suivie avec la commande ${inlineCode('!delete')}\n`
+            title = "✸ Hello";
+            description = `Je m’appelle ${bold('@Epitome')}. Je suis une bot qui t’aidera à rester à jour vis-à-vis des réseaux sociaux, et des médias / blogs que tu suis.\n\n`
+                + "Voici la liste des choses que je sais faire!\n"
+                + `- Configurer une nouvelle source de publications à suivre avec la commande ${inlineCode('!add')}\n`
+                + `- Supprimer une source existante avec la commande ${inlineCode('!delete')}\n`
+                + `- Annuler une procédure d'ajout ou de suppression de source en cours avec la commande ${inlineCode('!cancel')}\n`
                 + `- Lister toutes les sources suivies avec la commande ${inlineCode('!list')}\n`
-                + `- Enfin, répondre à un petit ${inlineCode('!help')} comme maintenant.`
+                + `- Enfin, répondre à un petit ${inlineCode('!help')} comme ici`
             footerText = "Help";
             break;
         }
         case MessageTypes.LIST: {
-            title = "Liste des sources de publications configurées";
+            title = "✸ Liste des sources de publications suivies";
             fields = formatSourceListToEmbedField((data as SourceList) || sourceListMockData);
             footerText = "Listing";
             break;

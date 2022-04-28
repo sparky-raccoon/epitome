@@ -11,10 +11,10 @@ import {
     TextChannel,
     ThreadChannel
 } from 'discord.js';
-import {autoDestructionMessage, getMessage} from './messages';
-import {MessageData, MessageTypes, Source, SourceTypes} from './types';
-import {AddFlow, DeleteFlow} from './flows';
-import {addSource, deleteSource, isSourceListEmpty, listSources} from './utils';
+import { autoDestructionMessage, getMessage } from './messages';
+import { MessageData, MessageTypes, Source, SourceTypes } from './types';
+import { AddFlow, DeleteFlow } from './flows';
+import { addSource, deleteSource, isSourceListEmpty, listSources } from './utils';
 
 dotenv.config();
 
@@ -58,7 +58,7 @@ const deleteLastMessage = async (flow: Flow) => {
 
 const deleteLastMessageWithTimeout = (flow: Flow) => setTimeout(async () => {
     await deleteLastMessage(flow);
-}, 3000)
+}, 5000)
 
 const cancelFlow = async (flow: Flow, channel: Channel) => {
     await deleteLastMessage(flow);
@@ -76,7 +76,8 @@ client.on("messageCreate", async (message: Message) => {
     const isAddCommand = messageContent === "!add";
     const isDeleteCommand = messageContent === "!delete";
     const isListCommand = messageContent === "!list";
-    const isCommandMessage = isAddCommand || isDeleteCommand || isListCommand;
+    const isHelpCommand = messageContent === "!help";
+    const isCommandMessage = isAddCommand || isDeleteCommand || isListCommand || isHelpCommand;
 
     if (!currentFlow) {
         if (isCommandMessage) {
@@ -103,6 +104,11 @@ client.on("messageCreate", async (message: Message) => {
             } else if (isListCommand) {
                 const sourceList = await listSources();
                 const { embed } = getMessage(MessageTypes.LIST, sourceList);
+                if (!embed) return;
+
+                await channel.send( { embeds: [embed] });
+            } else if (isHelpCommand) {
+                const { embed } = getMessage(MessageTypes.HELP);
                 if (!embed) return;
 
                 await channel.send( { embeds: [embed] });
