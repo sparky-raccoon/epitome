@@ -1,7 +1,8 @@
 import dotenv from 'dotenv';
 import {
     Client,
-    DMChannel, Interaction,
+    DMChannel,
+    Interaction,
     Message,
     MessageActionRow,
     MessageEmbed,
@@ -10,10 +11,10 @@ import {
     TextChannel,
     ThreadChannel
 } from 'discord.js';
-import { getMessage, autoDestructionMessage } from './messages';
-import { MessageTypes, Source, SourceTypes, MessageData } from './types';
-import { AddFlow, DeleteFlow } from './flows';
-import { addSource, deleteSource, listSources, isSourceListEmpty } from './utils';
+import {autoDestructionMessage, getMessage} from './messages';
+import {MessageData, MessageTypes, Source, SourceTypes} from './types';
+import {AddFlow, DeleteFlow} from './flows';
+import {addSource, deleteSource, isSourceListEmpty, listSources} from './utils';
 
 dotenv.config();
 
@@ -71,32 +72,40 @@ let currentFlow: Flow | undefined;
 client.on("messageCreate", async (message: Message) => {
     const { content: messageContent, author: { id: messageAuthor }, channel } = message;
     console.log(`${messageAuthor}: ${messageContent}`);
-    const isCommandMessage =
-        messageContent === "!add" ||
-        messageContent === "!delete";
+
+    const isAddCommand = messageContent === "!add";
+    const isDeleteCommand = messageContent === "!delete";
+    const isListCommand = messageContent === "!list";
+    const isCommandMessage = isAddCommand || isDeleteCommand || isListCommand;
 
     if (!currentFlow) {
         if (isCommandMessage) {
-            const isAddCommand = messageContent === "!add";
+            if (isAddCommand || isDeleteCommand) {
+                if (isAddCommand) currentFlow = new AddFlow(messageAuthor);
+                else currentFlow = new DeleteFlow(messageAuthor);
 
-            if (isAddCommand) currentFlow = new AddFlow(messageAuthor);
-            else currentFlow = new DeleteFlow(messageAuthor);
-
-            // AddFlow/DeleteFlow: Step 0 -> 1
-            await message.delete();
-            if (currentFlow instanceof AddFlow) await proceedFlow(currentFlow, channel);
-            else {
-                const sourceList = await listSources();
-                if (!isSourceListEmpty(sourceList)) {
-                    currentFlow.setSourceList(sourceList);
-                    await proceedFlow(currentFlow, channel, { messageData: sourceList });
-                } else {
-                    currentFlow.errorOrRetry();
-                    const errorMessage = `Il n'y a aucune source à supprimer, la liste est vide!\n${autoDestructionMessage}`
-                    await sendFlowMessage(currentFlow, channel, errorMessage);
-                    await deleteLastMessageWithTimeout(currentFlow);
-                    currentFlow = undefined;
+                // AddFlow/DeleteFlow: Step 0 -> 1
+                await message.delete();
+                if (currentFlow instanceof AddFlow) await proceedFlow(currentFlow, channel);
+                else {
+                    const sourceList = await listSources();
+                    if (!isSourceListEmpty(sourceList)) {
+                        currentFlow.setSourceList(sourceList);
+                        await proceedFlow(currentFlow, channel, { messageData: sourceList });
+                    } else {
+                        currentFlow.errorOrRetry();
+                        const errorMessage = `Il n'y a aucune source à supprimer, la liste est vide!\n${autoDestructionMessage}`
+                        await sendFlowMessage(currentFlow, channel, errorMessage);
+                        await deleteLastMessageWithTimeout(currentFlow);
+                        currentFlow = undefined;
+                    }
                 }
+            } else if (isListCommand) {
+                const sourceList = await listSources();
+                const { embed } = getMessage(MessageTypes.LIST, sourceList);
+                if (!embed) return;
+
+                await channel.send( { embeds: [embed] });
             }
         }
     }
