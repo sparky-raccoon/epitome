@@ -77,7 +77,9 @@ client.on("messageCreate", async (message: Message) => {
     const isDeleteCommand = messageContent === "!delete";
     const isListCommand = messageContent === "!list";
     const isHelpCommand = messageContent === "!help";
-    const isCommandMessage = isAddCommand || isDeleteCommand || isListCommand || isHelpCommand;
+    const isCancelCommand = messageContent === "!cancel";
+    const isCommandMessage = isAddCommand || isDeleteCommand || isListCommand ||
+        isHelpCommand || isCancelCommand;
 
     if (!currentFlow) {
         if (isCommandMessage) {
@@ -116,8 +118,11 @@ client.on("messageCreate", async (message: Message) => {
         }
     }
 
-    if (currentFlow && messageAuthor === currentFlow.initiator() && !currentFlow.isAtInteractiveStep()) {
-        if (currentFlow instanceof AddFlow) {
+    if (currentFlow && messageAuthor === currentFlow.initiator()) {
+        if (isCancelCommand) {
+            await cancelFlow(currentFlow, channel);
+            currentFlow = undefined;
+        } else if (!currentFlow.isAtInteractiveStep() && currentFlow instanceof AddFlow) {
             // AddFlow: Step 2 -> 3
             await deleteLastMessage(currentFlow);
             await message.delete();
