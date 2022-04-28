@@ -74,6 +74,28 @@ const deleteSource = (sourceName: string): Promise<void> => {
     })
 }
 
+const listSources = (): Promise<SourceList> => {
+    return new Promise((resolve, reject) => {
+        readFile(DATA_FILE_PATH, 'utf8', async (error, data) => {
+            if (error) reject(error);
+            resolve(JSON.parse(data));
+        })
+    })
+}
+
+const isSourceListEmpty = (sourceList: SourceList): boolean => {
+    let isEmpty = true;
+    for (let sourceType in sourceList) {
+        for (let sourceObject in sourceList[sourceType as SourceTypes]) {
+            if (sourceObject) {
+                isEmpty = false;
+                break;
+            }
+        }
+    }
+    return isEmpty;
+}
+
 const formatSourceTypeToReadable = (type: SourceTypes): string => {
     switch (type) {
         case SourceTypes.YOUTUBE:
@@ -99,4 +121,4 @@ const formatSourceListToEmbedField = (list: SourceList): EmbedFieldData[] => {
     }, [])
 }
 
-export { addSource, deleteSource, formatSourceTypeToReadable, formatSourceListToEmbedField }
+export { addSource, deleteSource, listSources, formatSourceTypeToReadable, formatSourceListToEmbedField, isSourceListEmpty }

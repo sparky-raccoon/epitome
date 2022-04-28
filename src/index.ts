@@ -10,11 +10,10 @@ import {
     TextChannel,
     ThreadChannel
 } from 'discord.js';
-import { inlineCode } from '@discordjs/builders';
-import { getMessage } from './messages';
+import { getMessage, autoDestructionMessage } from './messages';
 import { MessageTypes, Source, SourceTypes, MessageData } from './types';
 import { AddFlow, DeleteFlow } from './flows';
-import { addSource } from './utils';
+import { addSource, deleteSource, listSources, isSourceListEmpty } from './utils';
 
 dotenv.config();
 
@@ -51,6 +50,23 @@ const proceedFlow = async (flow: Flow, channel: Channel, data?: { messageData?: 
     await sendFlowMessage(flow, channel, data?.messageData);
 }
 
+const deleteLastMessage = async (flow: Flow) => {
+    const lastMessage = flow.getLastMessage();
+    await (lastMessage as Message).delete();
+}
+
+const deleteLastMessageWithTimeout = (flow: Flow) => setTimeout(async () => {
+    await deleteLastMessage(flow);
+}, 3000)
+
+const cancelFlow = async (flow: Flow, channel: Channel) => {
+    await deleteLastMessage(flow);
+    flow.cancel();
+    await sendFlowMessage(flow, channel);
+
+    await deleteLastMessageWithTimeout(flow);
+}
+
 let currentFlow: Flow | undefined;
 client.on("messageCreate", async (message: Message) => {
     const { content: messageContent, author: { id: messageAuthor }, channel } = message;
@@ -61,18 +77,36 @@ client.on("messageCreate", async (message: Message) => {
 
     if (!currentFlow) {
         if (isCommandMessage) {
-            if (messageContent === "!add") currentFlow = new AddFlow(messageAuthor);
+            const isAddCommand = messageContent === "!add";
+
+            if (isAddCommand) currentFlow = new AddFlow(messageAuthor);
             else currentFlow = new DeleteFlow(messageAuthor);
 
             // AddFlow/DeleteFlow: Step 0 -> 1
             await message.delete();
-            await proceedFlow(currentFlow, channel);
+            if (currentFlow instanceof AddFlow) await proceedFlow(currentFlow, channel);
+            else {
+                const sourceList = await listSources();
+                if (!isSourceListEmpty(sourceList)) {
+                    currentFlow.setSourceList(sourceList);
+                    await proceedFlow(currentFlow, channel, { messageData: sourceList });
+                } else {
+                    currentFlow.errorOrRetry();
+                    const errorMessage = `Il n'y a aucune source à supprimer, la liste est vide!\n${autoDestructionMessage}`
+                    await sendFlowMessage(currentFlow, channel, errorMessage);
+                    await deleteLastMessageWithTimeout(currentFlow);
+                    currentFlow = undefined;
+                }
+            }
         }
     }
 
     if (currentFlow && messageAuthor === currentFlow.initiator() && !currentFlow.isAtInteractiveStep()) {
         if (currentFlow instanceof AddFlow) {
             // AddFlow: Step 2 -> 3
+            await deleteLastMessage(currentFlow);
+            await message.delete();
+
             const sourceQuery = messageContent;
             const messageType = currentFlow.messageType();
             const sourceType = messageType === MessageTypes.ADD_INSTAGRAM ?
@@ -85,53 +119,70 @@ client.on("messageCreate", async (message: Message) => {
                 url: sourceQuery,
             }
 
-            currentFlow.setSourceToAdd(sourceToAdd);
+            currentFlow.setInvolvedSource(sourceToAdd);
             await proceedFlow(currentFlow, channel, { messageData: sourceToAdd });
-        } else {
-            // DeleteFlow: Step 1 -> 2
         }
     }
 })
 
 client.on("interactionCreate", async (interaction: Interaction) => {
     if (currentFlow && interaction.user.id === currentFlow.initiator() ) {
-        console.log('interaction user is initiator of current flow');
+        const channel = interaction.channel as Channel;
         if (interaction.isSelectMenu()) {
-            // AddFlow: Step 1 -> 2
-            const sourceType = interaction.values[0];
+            // AddFlow/DeleteFlow: Step 1 -> 2
+            const selectedValue = interaction.values[0];
             await interaction.deferUpdate();
 
-            const lastMessage = currentFlow.getLastMessage();
-            await (lastMessage as Message).delete();
+            await deleteLastMessage(currentFlow);
 
-            await proceedFlow(currentFlow, interaction.channel as Channel, { messageSubType: sourceType })
+            if (currentFlow instanceof AddFlow) {
+                await proceedFlow(currentFlow, channel, { messageSubType: selectedValue })
+            } else {
+                const sourceList = currentFlow.getSourceList();
+                if (sourceList) {
+                    const sourceName = selectedValue.slice(selectedValue.indexOf('-') + 1, selectedValue.length);
+                    let sourceType;
+                    let source
+                    for (const type in sourceList) {
+                        const sourcesByType = sourceList[type as SourceTypes];
+                        if (sourcesByType) {
+                            if (Object.keys(sourcesByType).includes(sourceName)) {
+                                sourceType = type;
+                                source = sourcesByType[sourceName];
+                                break;
+                            }
+                        }
+                    }
+
+                    if (source) {
+                        const sourceToDelete: Source = {
+                            type: sourceType as SourceTypes,
+                            name: sourceName,
+                            url: source.url,
+                        }
+
+                        currentFlow.setInvolvedSource(sourceToDelete);
+                        await proceedFlow(currentFlow, channel, { messageData: sourceToDelete });
+                    }
+                }
+            }
         } else {
             // FIXME: for some reasons, ts doesn't seem to recognize ButtonInteraction to hold
-            // the customId property.
+            // the customId property. Same goes for deferUpdate().
             const isYesButtonClicked = (interaction as Interaction & { customId: string }).customId === 'confirm-yes-button';
-            if (currentFlow instanceof AddFlow) {
-                // @ts-ignore
-                await interaction.deferUpdate();
-                // AddFlow:
-                // isYesButtonClicked === true ? Step 3 -> 4 : Repeat Step 3
-                if (isYesButtonClicked) {
-                    const sourceToAdd = currentFlow.getSourceToAdd();
-                    await addSource(sourceToAdd as Source);
+            await (interaction as Interaction & { deferUpdate: any }).deferUpdate();
 
-                    const lastMessage = currentFlow.getLastMessage();
-                    await (lastMessage as Message).delete();
+            // AddFlow: isYesButtonClicked === true ? Step 3 -> 4 : Cancel Process
+            // DeleteFlow: isYesButtonClicked === true ? Step 2 -> 3 : Cancel Process
+            const isAddFlow = currentFlow instanceof AddFlow;
+            if (isYesButtonClicked) {
+                const involvedSource = currentFlow.getInvolvedSource() as Source;
+                isAddFlow ? await addSource(involvedSource) : await deleteSource(involvedSource.name);
 
-                    await proceedFlow(currentFlow, interaction.channel as Channel, { messageData: sourceToAdd });
-                    currentFlow = undefined;
-                } else {
-                   console.log('add: user retry');
-                   currentFlow.errorOrRetry();
-                   const retryMessage = `Peut-être il y a-t-il eu un mispelling dans le nom de compte / chaîne ou url que tu viens de donner. Réessaie, ou tape la commande ${inlineCode('!cancel')} pour annuler cette procédure d'ajout!`
-                   await sendFlowMessage(currentFlow, interaction.channel as Channel, retryMessage);
-                }
-            } else {
-                console.log('delete: user clicked yes/no button');
-            }
+                await deleteLastMessage(currentFlow);
+                await proceedFlow(currentFlow, channel, { messageData: involvedSource });
+            } else await cancelFlow(currentFlow, channel);
+            currentFlow = undefined;
         }
     }
 })

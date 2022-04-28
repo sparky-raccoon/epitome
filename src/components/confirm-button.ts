@@ -1,14 +1,14 @@
 import { MessageActionRow, MessageButton } from 'discord.js';
 
-const confirmButton = new MessageActionRow()
+const confirmButton = (primaryText = 'Oui', secondaryText = 'Non') => new MessageActionRow()
     .addComponents([
             new MessageButton()
                 .setCustomId('confirm-yes-button')
-                .setLabel('Yes')
+                .setLabel(primaryText)
                 .setStyle('PRIMARY'),
             new MessageButton()
                 .setCustomId('confirm-no-button')
-                .setLabel('No')
+                .setLabel(secondaryText)
                 .setStyle('SECONDARY'),
         ]
     )

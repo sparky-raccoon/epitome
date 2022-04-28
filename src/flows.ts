@@ -1,11 +1,11 @@
 import { Message } from 'discord.js';
-import { MessageTypes, Source } from './types';
+import { MessageTypes, Source, SourceList } from './types';
 
 export class AddFlow {
     _step = 0;
     _messageType: MessageTypes = MessageTypes.NULL;
     _lastMessage: Message | undefined;
-    _sourceToAdd: Source | undefined;
+    _involvedSource: Source | undefined;
     _initiator = '';
 
     constructor(initiator: string) {
@@ -56,10 +56,10 @@ export class AddFlow {
     isAtInteractiveStep = () => this._messageType === MessageTypes.ADD ||
         this._messageType === MessageTypes.ADD_CONFIRM;
     getLastMessage = () => this._lastMessage;
-    getSourceToAdd = () => this._sourceToAdd;
+    getInvolvedSource = () => this._involvedSource;
 
     setLastMessage = (message: Message) => this._lastMessage = message;
-    setSourceToAdd = (source: Source) => this._sourceToAdd = source;
+    setInvolvedSource = (source: Source) => this._involvedSource = source;
     cancel = () => this._messageType = MessageTypes.ADD_CANCEL;
     errorOrRetry = () => {
         this._step = 2;
@@ -72,6 +72,8 @@ export class DeleteFlow {
     _messageType: MessageTypes = MessageTypes.NULL;
     _lastMessage: Message | undefined;
     _initiator = '';
+    _sourceList: SourceList | undefined;
+    _involvedSource: Source | undefined;
 
     constructor(initiator: string) {
         this._initiator = initiator;
@@ -100,8 +102,12 @@ export class DeleteFlow {
     messageType = () => this._messageType;
     isAtInteractiveStep = () => this._messageType === MessageTypes.DELETE_CONFIRM;
     getLastMessage = () => this._lastMessage;
+    getSourceList = () => this._sourceList;
+    getInvolvedSource = () => this._involvedSource;
 
     setLastMessage = (message: Message) => this._lastMessage = message;
+    setSourceList = (sourceList: SourceList) => this._sourceList = sourceList;
+    setInvolvedSource = (source: Source) => this._involvedSource = source;
     cancel = () => this._messageType = MessageTypes.DELETE_CANCEL;
     errorOrRetry = () => this._messageType = MessageTypes.DELETE_OUPS;
 }

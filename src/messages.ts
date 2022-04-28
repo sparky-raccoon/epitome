@@ -4,8 +4,10 @@ import { blockQuote, bold, inlineCode } from '@discordjs/builders';
 import { AVATAR_URL, CONFIGURING_IMG_URL, ERASING_IMG_URL } from './constants';
 import { MessageTypes, Source, SourceList, SourceTypes, MessageData } from './types';
 import { formatSourceTypeToReadable, formatSourceListToEmbedField } from './utils';
-import { notificationMenu } from './components/notification-menu';
+import { selectSourceTypeMenu, selectSavedSourceMenu } from './components/select-menu';
 import { confirmButton } from './components/confirm-button';
+
+const autoDestructionMessage = "✸ Ce message va s'auto-détruire dans 3..2..1 ✸";
 
 const getMessage = (type: MessageTypes, data?: MessageData): {
     embed?: MessageEmbed,
@@ -50,17 +52,16 @@ const getMessage = (type: MessageTypes, data?: MessageData): {
         }
     }
 
-    const errorMockMessage = "Il y a eu un pépin quelque part ...";
-    const cancelMockMessage = "Tu as mis bien trop de temps à me répondre!";
+    const defaultErrorMessage ="Il y a eu un pépin quelque part.";
     const cancelInfoMessage = `\nTu pourras envoyer la commande ${inlineCode('!cancel')} à tout moment pour annuler cette procédure.`;
 
     switch (type) {
         case MessageTypes.ADD: {
             title = "Config. d'une nouvelle source de publications à suivre"
-            description = `Choisis le type de publications à suivre (YouTube, Instagram, Twitter, ou un flux RSS) dans le sélecteur juste en-dessous ! 👇${cancelInfoMessage}`;
+            description = `Choisis le type de publications à suivre (YouTube, Instagram, Twitter, ou un flux RSS) dans le sélecteur juste en-dessous! 👇${cancelInfoMessage}`;
             imageUrl = CONFIGURING_IMG_URL;
             footerText = 'Ajout de source';
-            component = notificationMenu;
+            component = selectSourceTypeMenu;
             break;
         }
         case MessageTypes.ADD_INSTAGRAM: {
@@ -96,7 +97,7 @@ const getMessage = (type: MessageTypes, data?: MessageData): {
             title = "Les informations de la source de publications configurée sont-elles exactes ?";
             description = blockQuote(`Type: ${formatSourceTypeToReadable(type)}\nChaîne: ${name}\nUrl: ${url}`);
             footerText = 'Ajout de source';
-            component = confirmButton;
+            component = confirmButton('Oui', 'Non (Annuler)');
             break;
         }
         case MessageTypes.ADD_COMPLETE: {
@@ -107,22 +108,22 @@ const getMessage = (type: MessageTypes, data?: MessageData): {
             break;
         }
         case MessageTypes.ADD_CANCEL: {
-            title = "Procédure de config. d'une nouvelle source de publications annulée";
-            description = `${(data as string) || cancelMockMessage}`
+            title = "Config. d'une nouvelle source de publications annulée";
+            description = autoDestructionMessage;
             footerText = "Ajout de source";
             break;
         }
         case MessageTypes.ADD_OUPS: {
-            title = "Oups!";
-            description = `${(data as string) || errorMockMessage}`;
+            title = "Oupsie!";
+            description = `${(data as string) || defaultErrorMessage}`;
             footerText = "Ajout de source";
             break;
         }
         case MessageTypes.DELETE: {
             title = "Suppression d'une source de publications existante"
-            description = `Indique le nom de la source à supprimer (nom de compte, de chaîne ou de flux RSS).\nPour rappel voici la liste des sources présentement configurées. 👇${cancelInfoMessage}`;
-            fields = formatSourceListToEmbedField((data as SourceList) || sourceListMockData);
+            description = `Choisis la source à supprimer dans le sélecteur juste en-dessous! 👇${cancelInfoMessage}`;;
             imageUrl = ERASING_IMG_URL;
+            component = selectSavedSourceMenu(data as SourceList);
             footerText = 'Suppression de source';
             break;
         }
@@ -131,7 +132,7 @@ const getMessage = (type: MessageTypes, data?: MessageData): {
             title = "La source de publications a supprimer est-elle bien la suivante ?";
             description = blockQuote(`Type: ${formatSourceTypeToReadable(type)}\nChaîne: ${name}\nUrl: ${url}`);
             footerText = 'Suppression de source';
-            component = confirmButton;
+            component = confirmButton('Oui', 'Non (Annuler)');
             break;
         }
         case MessageTypes.DELETE_COMPLETE: {
@@ -142,14 +143,14 @@ const getMessage = (type: MessageTypes, data?: MessageData): {
             break;
         }
         case MessageTypes.DELETE_CANCEL: {
-            title = "Procédure de suppression d'une source de publications existante annulée";
-            description = `${(data as string) || cancelMockMessage}`
+            title = "Suppression d'une source de publications existante annulée";
+            description = autoDestructionMessage;
             footerText = "Suppression de source";
             break;
         }
         case MessageTypes.DELETE_OUPS: {
-            title = "Oups!";
-            description = `${(data as string) || errorMockMessage}`;
+            title = "Oupsie!";
+            description = `${(data as string) || defaultErrorMessage}`;
             footerText = "Suppression de source";
             break;
         }
@@ -194,4 +195,4 @@ const getMessage = (type: MessageTypes, data?: MessageData): {
 }
 
 
-export { getMessage }
+export { getMessage, autoDestructionMessage }
