@@ -1,6 +1,6 @@
 import { MessageActionRow, MessageSelectMenu, MessageSelectOptionData} from 'discord.js';
 import { SourceList, SourceTypes } from '../types';
-import { formatSourceTypeToReadable } from '../utils';
+import { formatSourceTypeToReadable } from '../utils/source';
 
 const selectSourceTypeMenu = new MessageActionRow()
     .addComponents(

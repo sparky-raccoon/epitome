@@ -1,3 +1,6 @@
+import { DMChannel, NewsChannel, PartialDMChannel, TextChannel, ThreadChannel } from 'discord.js';
+import { AddFlow, DeleteFlow } from './flows';
+
 enum MessageTypes {
     NULL = '',
     ADD = 'add',
@@ -42,4 +45,7 @@ interface Source {
     url: string,
 }
 
-export { MessageTypes, SourceTypes, Source, SourceList, MessageData }
+type Flow = AddFlow | DeleteFlow;
+type Channel = TextChannel | NewsChannel | DMChannel | PartialDMChannel | ThreadChannel;
+
+export { MessageTypes, SourceTypes, Source, SourceList, MessageData, Flow, Channel }

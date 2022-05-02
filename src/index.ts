@@ -1,20 +1,10 @@
 import dotenv from 'dotenv';
-import {
-    Client,
-    DMChannel,
-    Interaction,
-    Message,
-    MessageActionRow,
-    MessageEmbed,
-    NewsChannel,
-    PartialDMChannel,
-    TextChannel,
-    ThreadChannel
-} from 'discord.js';
+import { Client, Interaction, Message } from 'discord.js';
 import { autoDestructionMessage, getMessage } from './messages';
-import { MessageData, MessageTypes, Source, SourceTypes } from './types';
+import { MessageTypes, SourceTypes, Source, Flow, Channel } from './types';
 import { AddFlow, DeleteFlow } from './flows';
-import { addSource, deleteSource, isSourceListEmpty, listSources } from './utils';
+import { addSource, deleteSource, isSourceListEmpty, listSources } from './utils/source';
+import { sendFlowMessage, proceedFlow, deleteLastMessage, deleteLastMessageWithTimeout, cancelFlow } from './utils/flow';
 
 dotenv.config();
 
@@ -29,44 +19,6 @@ client.on("ready", () => {
     console.log((`Logged in as ${client.user?.tag}`));
     client.user?.setActivity('les internets ✨', { type: 'LISTENING' });
 });
-
-type Flow = AddFlow | DeleteFlow;
-type Channel = TextChannel | NewsChannel | DMChannel | PartialDMChannel | ThreadChannel;
-
-const sendFlowMessage = async (flow: Flow, channel: Channel, data?: MessageData) => {
-    const messageType = flow.messageType();
-    const { embed, component } = getMessage(messageType, data);
-    if (!embed) return;
-
-    let messageToSend: { embeds: MessageEmbed[], components?: MessageActionRow[] } = { embeds: [embed] };
-    if (component)
-        messageToSend = { ...messageToSend, components: [component] }
-
-    const sentMessage: Message = await channel.send(messageToSend);
-    flow.setLastMessage(sentMessage);
-}
-
-const proceedFlow = async (flow: Flow, channel: Channel, data?: { messageData?: MessageData, messageSubType?: string }) => {
-    flow.next(data?.messageSubType || '');
-    await sendFlowMessage(flow, channel, data?.messageData);
-}
-
-const deleteLastMessage = async (flow: Flow) => {
-    const lastMessage = flow.getLastMessage();
-    await (lastMessage as Message).delete();
-}
-
-const deleteLastMessageWithTimeout = (flow: Flow) => setTimeout(async () => {
-    await deleteLastMessage(flow);
-}, 5000)
-
-const cancelFlow = async (flow: Flow, channel: Channel) => {
-    await deleteLastMessage(flow);
-    flow.cancel();
-    await sendFlowMessage(flow, channel);
-
-    await deleteLastMessageWithTimeout(flow);
-}
 
 let currentFlow: Flow | undefined;
 client.on("messageCreate", async (message: Message) => {

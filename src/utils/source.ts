@@ -1,7 +1,7 @@
 import { access, readFile, writeFile } from 'fs';
 import path from 'path';
 import { EmbedFieldData } from 'discord.js';
-import { Source, SourceList, SourceTypes } from './types';
+import { Source, SourceList, SourceTypes } from '../types';
 
 const DATA_FILE_PATH = path.resolve(__dirname, '../sources.json');
 

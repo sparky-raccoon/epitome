@@ -3,7 +3,7 @@ import { blockQuote, bold, inlineCode } from '@discordjs/builders';
 
 import { AVATAR_URL, CONFIGURING_IMG_URL, ERASING_IMG_URL } from './constants';
 import { MessageTypes, Source, SourceList, SourceTypes, MessageData } from './types';
-import { formatSourceTypeToReadable, formatSourceListToEmbedField } from './utils';
+import { formatSourceTypeToReadable, formatSourceListToEmbedField } from './utils/source';
 import { selectSourceTypeMenu, selectSavedSourceMenu } from './components/select-menu';
 import { confirmButton } from './components/confirm-button';
 
