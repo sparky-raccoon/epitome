@@ -14,20 +14,11 @@
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "removeComments": true,
-    "typeRoots": [
-      "node_modules/@types"
-    ],
+    "typeRoots": ["node_modules/@types"],
     "sourceMap": false,
     "baseUrl": "./"
   },
-  "files": [
-    "src/index.ts"
-  ],
-  "include": [
-    "./**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "files": ["src/index.ts"],
+  "include": ["./**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

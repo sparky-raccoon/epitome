@@ -1,0 +1,7 @@
+# Declares that this is the top-level configuration
+root = true
+
+# Applies to all files
+[*]
+indent_style = space
+indent_size = 2
