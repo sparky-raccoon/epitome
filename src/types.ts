@@ -1,39 +1,32 @@
-import {
-  DMChannel,
-  NewsChannel,
-  PartialDMChannel,
-  TextChannel,
-  ThreadChannel,
-} from "discord.js";
-import { AddFlow, DeleteFlow } from "./flows";
-
-enum MessageTypes {
-  NULL = "",
-  ADD = "add",
-  ADD_COMPLETE = "add-complete",
-  ADD_CONFIRM = "add-confirm",
-  ADD_OUPS = "add-oups",
-  ADD_CANCEL = "add-cancel",
-  ADD_INSTAGRAM = "add-ig",
-  ADD_RSS = "add-rss",
-  ADD_TWITTER = "add-twitter",
-  ADD_YOUTUBE = "add-youtube",
-  DELETE = "delete",
-  DELETE_COMPLETE = "delete-complete",
-  DELETE_CONFIRM = "delete-confirm",
-  DELETE_OUPS = "delete-oups",
-  DELETE_CANCEL = "delete-cancel",
-  LIST = "list",
-  HELP = "help",
-}
-
-type MessageData = string | Source | SourceList;
-
 enum SourceTypes {
   INSTAGRAM = "ig",
-  RSS = "rss",
   TWITTER = "twitter",
   YOUTUBE = "youtube",
+  RSS = "rss",
+}
+
+enum CommandTypes {
+  ADD = "add",
+  DELETE = "delete",
+  CANCEL = "cancel",
+  LIST = "list",
+  HELP = "help",
+ }
+
+enum MessageTypes {
+  HELP = "help",
+  LIST = "list",
+  INSTAGRAM_NEWS = "ig_news",
+  TWITTER_NEWS = "twitter_news",
+  YOUTUBE_NEWS = "youtube_news",
+  RSS_NEWS = "rss_news",
+  ADD_CONFIRM = "add",
+  ADD_SUCCESS = "add_success",
+  DELETE = "delete",
+  DELETE_CONFIRM = "delete_confirm",
+  DELETE_SUCCESS = "delete_success",
+  CANCEL = "cancel",
+  ERROR = "error",
 }
 
 type SourceList = {
@@ -45,26 +38,12 @@ type SourceList = {
   };
 };
 
-interface Source {
+type Source = {
   type: SourceTypes;
   name: string;
   url: string;
-}
-
-type Flow = AddFlow | DeleteFlow;
-type Channel =
-  | TextChannel
-  | NewsChannel
-  | DMChannel
-  | PartialDMChannel
-  | ThreadChannel;
-
-export {
-  MessageTypes,
-  SourceTypes,
-  Source,
-  SourceList,
-  MessageData,
-  Flow,
-  Channel,
 };
+
+type MessageData = string | Source | SourceList;
+
+export { SourceTypes, CommandTypes, MessageTypes, SourceList, Source, MessageData };

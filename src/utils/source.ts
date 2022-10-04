@@ -1,12 +1,13 @@
 import { access, readFile, writeFile } from "fs";
 import path from "path";
-import { EmbedFieldData } from "discord.js";
+import { APIEmbedField } from "discord.js";
 import { Source, SourceList, SourceTypes } from "../types";
+import {blockQuote} from '@discordjs/builders';
 
 const DATA_FILE_PATH = path.resolve(__dirname, "../sources.json");
 
 const updateDataFile = (data: SourceList): Promise<void> => {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     writeFile(DATA_FILE_PATH, JSON.stringify(data, null, 2), (error) => {
       if (error) reject(error);
       resolve();
@@ -17,9 +18,10 @@ const updateDataFile = (data: SourceList): Promise<void> => {
 const addSource = async (newData: Source): Promise<void> => {
   console.log("addSource", newData);
   const { type, name, url } = newData;
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     access(DATA_FILE_PATH, (err) => {
       const timestamp = new Date().toISOString();
+      // FIXME: there might be other kind of errors here than 'file not found'.
       if (err) {
         writeFile(
           DATA_FILE_PATH,
@@ -56,7 +58,7 @@ const addSource = async (newData: Source): Promise<void> => {
 
 const deleteSource = (sourceName: string): Promise<void> => {
   console.log("deleteSource", { sourceName });
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     readFile(DATA_FILE_PATH, "utf8", async (error, data) => {
       if (error) reject(error);
 
@@ -79,7 +81,7 @@ const deleteSource = (sourceName: string): Promise<void> => {
 };
 
 const listSources = (): Promise<SourceList> => {
-  return new Promise((resolve, reject) => {
+  return new Promise<SourceList>((resolve, reject) => {
     readFile(DATA_FILE_PATH, "utf8", async (error, data) => {
       if (error) reject(error);
       resolve(JSON.parse(data));
@@ -113,8 +115,18 @@ const formatSourceTypeToReadable = (type: SourceTypes): string => {
   }
 };
 
-const formatSourceListToEmbedField = (list: SourceList): EmbedFieldData[] => {
-  return Object.keys(list).reduce((acc: EmbedFieldData[], key: string) => {
+const formatSourceToBlockQuote = (source: Source): `>>> ${string}` => {
+  const { type, name, url } = source;
+
+  return blockQuote(
+    `Type : ${formatSourceTypeToReadable(type)}\n` +
+    `Chaîne : ${name}\n` +
+    `Url : ${url}`
+  );
+}
+
+const formatSourceListToEmbedField = (list: SourceList): APIEmbedField[] => {
+  return Object.keys(list).reduce((acc: APIEmbedField[], key: string) => {
     const name = formatSourceTypeToReadable(key as SourceTypes);
     const sourcesByType = list[key as SourceTypes];
     const sourceNamesByType = Object.keys(sourcesByType || {});
@@ -129,6 +141,7 @@ export {
   deleteSource,
   listSources,
   formatSourceTypeToReadable,
+  formatSourceToBlockQuote,
   formatSourceListToEmbedField,
   isSourceListEmpty,
 };

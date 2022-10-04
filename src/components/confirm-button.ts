@@ -1,15 +1,15 @@
-import { MessageActionRow, MessageButton } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 
-const confirmButton = (primaryText = "Oui", secondaryText = "Non") =>
-  new MessageActionRow().addComponents([
-    new MessageButton()
+const confirmOrCancelButton = (): ActionRowBuilder<ButtonBuilder> =>
+  new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
       .setCustomId("confirm-yes-button")
-      .setLabel(primaryText)
-      .setStyle("PRIMARY"),
-    new MessageButton()
+      .setLabel("Confirmer")
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
       .setCustomId("confirm-no-button")
-      .setLabel(secondaryText)
-      .setStyle("SECONDARY"),
-  ]);
+      .setLabel("Annuler")
+      .setStyle(ButtonStyle.Secondary),
+  );
 
-export { confirmButton };
+export { confirmOrCancelButton };

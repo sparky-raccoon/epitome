@@ -1,255 +1,153 @@
 import {
   ColorResolvable,
-  EmbedFieldData,
-  MessageActionRow,
-  MessageEmbed,
+  EmbedBuilder,
+  APIEmbedField,
+  blockQuote,
+  bold,
+  ActionRowData,
 } from "discord.js";
-import { blockQuote, bold, inlineCode } from "@discordjs/builders";
 
-import { AVATAR_URL, CONFIGURING_IMG_URL, ERASING_IMG_URL } from "./constants";
 import {
+  MessageData,
   MessageTypes,
   Source,
   SourceList,
   SourceTypes,
-  MessageData,
 } from "./types";
-import {
-  formatSourceTypeToReadable,
-  formatSourceListToEmbedField,
-} from "./utils/source";
-import {
-  selectSourceTypeMenu,
-  selectSavedSourceMenu,
-} from "./components/select-menu";
-import { confirmButton } from "./components/confirm-button";
+import { formatSourceListToEmbedField, formatSourceTypeToReadable, formatSourceToBlockQuote } from "./utils/source";
+import { confirmOrCancelButton } from "./components/confirm-button";
+import { selectSavedSourcesMenu } from "./components/select-menu";
 
-const autoDestructionMessage = "Ce message va s'auto-détruire dans 5..4..3..";
+const autoDestructionMessage =
+  "Ce message s’auto-détruira dans quelques instants.";
+
+const SourceColors: { [key in SourceTypes]: ColorResolvable } = {
+  [SourceTypes.INSTAGRAM]: "#e1306c",
+  [SourceTypes.TWITTER]: "#1da1f2",
+  [SourceTypes.YOUTUBE]: "#ff0000",
+  [SourceTypes.RSS]: "#ee802f",
+};
 
 const getMessage = (
   type: MessageTypes,
   data?: MessageData
-): {
-  embed?: MessageEmbed;
-  component?: MessageActionRow;
-} => {
-  if (type === MessageTypes.NULL) return {};
-
+) => {
   let color: ColorResolvable = "#ffffff";
-  let title = "";
+  let title = "✸ ";
   let description = "";
-  let fields: EmbedFieldData[] = [];
-  let imageUrl = "";
-  let footerText = "";
+  let fields: APIEmbedField[] | [APIEmbedField[]] = [];
+  const imageUrl = "";
   let component;
 
-  const sourceMockData: Source = {
-    type: SourceTypes.YOUTUBE,
-    name: "The Code Train",
-    url: "https://youtube/channel/the-code-train",
-  };
-
-  const sourceListMockData: SourceList = {
-    [SourceTypes.YOUTUBE]: {
-      ["Channel A"]: {
-        url: "https://youtube/channel/channel-a",
-        timestamp: new Date().toISOString(),
-      },
-      ["Channel B"]: {
-        url: "https://youtube/channel/channel-b",
-        timestamp: new Date().toISOString(),
-      },
-    },
-    [SourceTypes.INSTAGRAM]: {
-      ["@account-a"]: {
-        url: "https://instagram.com/account-a",
-        timestamp: new Date().toISOString(),
-      },
-      ["@account-b"]: {
-        url: "https://instagram.com/account-b",
-        timestamp: new Date().toISOString(),
-      },
-    },
-  };
-
-  const defaultErrorMessage = "Il y a eu un pépin quelque part.";
-  const cancelInfoMessage = `\nTu pourras envoyer la commande ${inlineCode(
-    "!cancel"
-  )} à tout moment pour annuler cette procédure.`;
-
   switch (type) {
-    case MessageTypes.ADD: {
-      title = "✸ Config. d'une nouvelle source de publications à suivre";
-      description = `Choisis le type de publications à suivre (YouTube, Instagram, Twitter, ou un flux RSS) dans le sélecteur juste en-dessous! 👇${cancelInfoMessage}`;
-      imageUrl = CONFIGURING_IMG_URL;
-      footerText = "Ajout de source";
-      component = selectSourceTypeMenu;
-      break;
-    }
-    case MessageTypes.ADD_INSTAGRAM: {
-      color = "#E1306C";
-      title = "✸ Ajout d'un compte Instagram dans la liste des sources suivies";
-      description = `Indique sous forme de message un nom de compte existant.\nPar exemple: ${bold(
-        "@jane.doe"
-      )}`;
-      footerText = "Ajout de source";
-      break;
-    }
-    case MessageTypes.ADD_RSS: {
-      color = "#ee802f";
-      title = "✸ Ajout d'un flux RSS dans la liste des sources suivies";
-      description = `Indique sous forme de message une url valide de feed RSS.\nPar exemple: ${bold(
-        "https://www.lemonde.fr/rss/en_continu.xml"
-      )}`;
-      footerText = "Ajout de source";
-      break;
-    }
-    case MessageTypes.ADD_TWITTER: {
-      color = "#1DA1F2";
-      title = "✸ Ajout d'un compte Twitter dans la liste des sources suivies";
-      description = `Indique sous forme de message un nom de compte existant.\nPar exemple: ${bold(
-        "@jane.doe"
-      )}`;
-      footerText = "Ajout de source";
-      break;
-    }
-    case MessageTypes.ADD_YOUTUBE: {
-      color = "#FF0000";
-      title = "✸ Ajout d'une chaîne YouTube dans la liste des sources suivies";
-      description = `Indique sous forme de message une url valide de chaîne.\nPar exemple: ${bold(
-        "https://www.youtube.com/channel/xxx"
-      )}`;
-      footerText = "Ajout de source";
-      break;
-    }
-    case MessageTypes.ADD_CONFIRM: {
-      const { type, name, url } = (data as Source) || sourceMockData;
-      title =
-        "✸ Les informations de la source de publications configurée sont-elles exactes ?";
-      description = blockQuote(
-        `Type: ${formatSourceTypeToReadable(
-          type
-        )}\nChaîne: ${name}\nUrl: ${url}`
-      );
-      footerText = "Ajout de source";
-      component = confirmButton("Oui", "Non (Annuler)");
-      break;
-    }
-    case MessageTypes.ADD_COMPLETE: {
-      const { type, name, url } = (data as Source) || sourceMockData;
-      title = "✸ Une nouvelle source de publications à suivre a été ajoutée !";
-      description = blockQuote(
-        `Type: ${formatSourceTypeToReadable(
-          type
-        )}\nChaîne: ${name}\nUrl: ${url}`
-      );
-      footerText = "Ajout de source";
-      break;
-    }
-    case MessageTypes.ADD_CANCEL: {
-      title = "✸ Config. d'une nouvelle source de publications annulée";
-      description = autoDestructionMessage;
-      footerText = "Ajout de source";
-      break;
-    }
-    case MessageTypes.ADD_OUPS: {
-      title = "✸ Oupsie!";
-      description = `${(data as string) || defaultErrorMessage}`;
-      footerText = "Ajout de source";
-      break;
-    }
-    case MessageTypes.DELETE: {
-      title = "✸ Suppression d'une source de publications existante";
-      description = `Choisis la source à supprimer dans le sélecteur juste en-dessous! 👇${cancelInfoMessage}`;
-      imageUrl = ERASING_IMG_URL;
-      component = selectSavedSourceMenu(data as SourceList);
-      footerText = "Suppression de source";
-      break;
-    }
-    case MessageTypes.DELETE_CONFIRM: {
-      const { type, name, url } = (data as Source) || sourceMockData;
-      title =
-        "✸ La source de publications a supprimer est-elle bien la suivante ?";
-      description = blockQuote(
-        `Type: ${formatSourceTypeToReadable(
-          type
-        )}\nChaîne: ${name}\nUrl: ${url}`
-      );
-      footerText = "Suppression de source";
-      component = confirmButton("Oui", "Non (Annuler)");
-      break;
-    }
-    case MessageTypes.DELETE_COMPLETE: {
-      const { type, name, url } = (data as Source) || sourceMockData;
-      title = "✸ Une source de publications vient d'être supprimée !";
-      description = blockQuote(
-        `Type: ${formatSourceTypeToReadable(
-          type
-        )}\nChaîne: ${name}\nUrl: ${url}`
-      );
-      footerText = "Suppression de source";
-      break;
-    }
-    case MessageTypes.DELETE_CANCEL: {
-      title = "✸ Suppression d'une source de publications existante annulée";
-      description = autoDestructionMessage;
-      footerText = "Suppression de source";
-      break;
-    }
-    case MessageTypes.DELETE_OUPS: {
-      title = "✸ Oupsie!";
-      description = `${(data as string) || defaultErrorMessage}`;
-      footerText = "Suppression de source";
-      break;
-    }
     case MessageTypes.HELP: {
-      title = "✸ Hello";
+      title += "Ici Epitome";
       description =
-        `Je m’appelle ${bold(
-          "@Epitome"
-        )}. Je suis une bot qui t’aidera à rester à jour vis-à-vis des réseaux sociaux, et des médias / blogs que tu suis.\n\n` +
-        "Voici la liste des choses que je sais faire!\n" +
-        `- Configurer une nouvelle source de publications à suivre avec la commande ${inlineCode(
-          "!add"
-        )}\n` +
-        `- Supprimer une source existante avec la commande ${inlineCode(
-          "!delete"
-        )}\n` +
-        `- Annuler une procédure d'ajout ou de suppression de source en cours avec la commande ${inlineCode(
-          "!cancel"
-        )}\n` +
-        `- Lister toutes les sources suivies avec la commande ${inlineCode(
-          "!list"
-        )}\n` +
-        `- Enfin, répondre à un petit ${inlineCode("!help")} comme ici`;
-      footerText = "Help";
+        "Je suis un.e bot qui t’aidera à rester à jour vis à vis de sources d’informations telles que les journaux en ligne, les blogs et les réseaux sociaux. Il suffit de me dire quoi suivre, et je te retournerai les dernières publications dans le canal Discord où j’aurai été configuré.e.\n" +
+        "\n" +
+        "Voici la liste des commandes auxquelles je réponds :\n" +
+        `▪︎ ${bold(
+          "/add <url>"
+        )} pour suivre une nouvelle source de publications \n` +
+        `▪︎ ${bold(
+          "/delete"
+        )} - pour supprimer une source de publications suivie \n` +
+        `▪︎ ${bold(
+          "/cancel"
+        )} - pour annuler une procédure d’ajout ou de suppression en cours \n` +
+        `▪︎ ${bold("/list")} - pour lister l’ensemble des sources suivies\n` +
+        `︎︎▪︎ ${bold(
+          "/help"
+        )} - pour te rappeler qui je suis, et ce que je sais faire`;
+      break;
+    }
+    case MessageTypes.INSTAGRAM_NEWS:
+    case MessageTypes.TWITTER_NEWS:
+    case MessageTypes.YOUTUBE_NEWS:
+    case MessageTypes.RSS_NEWS: {
+      const { type: sourceType, name: sourceName } = data as Source;
+      title += `${formatSourceTypeToReadable(sourceType)} Nouvelle publication de ${sourceName}`;
+      color = SourceColors[sourceType];
       break;
     }
     case MessageTypes.LIST: {
-      title = "✸ Liste des sources de publications suivies";
-      fields = formatSourceListToEmbedField(
-        (data as SourceList) || sourceListMockData
-      );
-      footerText = "Listing";
+      title += "Liste configurée des sources de publications";
+      fields = formatSourceListToEmbedField(data as SourceList);
       break;
+    }
+    case MessageTypes.ADD_CONFIRM: {
+      title += "Ajout d’une source de publications";
+      description =
+        "Vous êtes sur le point d’ajouter la source de publications suivante :\n" +
+        formatSourceToBlockQuote(data as Source);
+      component = confirmOrCancelButton();
+      break;
+    }
+    case MessageTypes.ADD_SUCCESS: {
+      title += "Votre source a bien été ajoutée";
+      description =
+        `Vous retrouverez celle-ci parmi la liste des sources précédemment configurées avec la commande ${bold(
+          "!list"
+        )}\n` +
+        "Toute nouvelle publication sera partagée dans le canal Discord présent.\n" +
+        "\n" +
+        autoDestructionMessage;
+      break;
+    }
+    case MessageTypes.DELETE: {
+      title += "Suppression d’une source de publications suivie";
+      description =
+        "Veuillez sélectionner la source à supprimer dans la liste ci-dessous :";
+      component = selectSavedSourcesMenu(data as SourceList);
+      break;
+    }
+    case MessageTypes.DELETE_CONFIRM: {
+      title += "Suppression d’une source de publiciations suivie";
+      description =
+        "Vous êtes sur le point de supprimer la source de publications suivante :\n" +
+        formatSourceToBlockQuote(data as Source);
+      component = confirmOrCancelButton();
+      break;
+    }
+    case MessageTypes.DELETE_SUCCESS: {
+      title += "Votre source a bien été supprimée";
+      description =
+        `Vous ne serez plus notifié.es des dernières publications associées à celle-ci. Pour retrouver la liste des sources de publication présentement configurées, appelez la commande ${blockQuote(
+          "!list"
+        )}.\n` +
+        "\n" +
+        autoDestructionMessage;
+      break;
+    }
+    case MessageTypes.CANCEL: {
+      title += "Procédure d’ajout / de suppression annulée";
+      description = autoDestructionMessage;
+      break;
+    }
+    case MessageTypes.ERROR: {
+      title += "Erreur !";
+      description =
+        "Quelque chose ne tourne pas rond.\n" +
+        `Message : “ERR NETWORK FAILURE"\n` +
+        "\n" +
+        autoDestructionMessage;
     }
   }
 
-  const embed: MessageEmbed = new MessageEmbed()
+  const embed: EmbedBuilder = new EmbedBuilder()
     .setColor(color)
     .setTitle(title)
-    .setFooter({ text: footerText, iconURL: AVATAR_URL })
     .setTimestamp();
 
   if (description) embed.setDescription(description);
-
   if (fields.length > 0) embed.setFields(fields);
-
   if (imageUrl) embed.setImage(imageUrl);
 
-  let res: { embed: MessageEmbed; component?: MessageActionRow } = { embed };
-  if (component) res = { embed, component };
-  return res;
+  if (component) {
+    return { embeds: [embed], components: [component], ephemeral: true };
+  } else {
+    return { embeds: [embed], ephemeral: true };
+  }
 };
 
 export { getMessage, autoDestructionMessage };

@@ -1,54 +1,30 @@
 import {
-  MessageActionRow,
-  MessageSelectMenu,
-  MessageSelectOptionData,
+  ActionRowBuilder,
+  SelectMenuBuilder,
 } from "discord.js";
 import { SourceList, SourceTypes } from "../types";
 import { formatSourceTypeToReadable } from "../utils/source";
 
-const selectSourceTypeMenu = new MessageActionRow().addComponents(
-  new MessageSelectMenu()
-    .setCustomId("select-source-type")
-    .setPlaceholder("Chaîne YouTube")
-    .addOptions([
-      {
-        label: "Chaîne YouTube",
-        value: "youtube",
-      },
-      {
-        label: "Compte Twitter",
-        value: "twitter",
-      },
-      {
-        label: "Compte Instagram",
-        value: "ig",
-      },
-      {
-        label: "Flux RSS",
-        value: "rss",
-      },
-    ])
-);
-
-const selectSavedSourceMenu = (sourceList: SourceList) => {
-  const options: MessageSelectOptionData | MessageSelectOptionData[] = [];
-  for (const sourceType in sourceList) {
-    for (const sourceName in sourceList[sourceType as SourceTypes]) {
-      const name = sourceName;
-      const type = formatSourceTypeToReadable(sourceType as SourceTypes);
-
-      options.push({
-        label: `${type} | ${name}`,
-        value: `${type}-${name}`,
-      });
-    }
+const selectSavedSourcesMenu = (savedSourceList: SourceList): ActionRowBuilder<SelectMenuBuilder> => {
+  const options = [];
+  const savedSourceTypes = Object.keys(savedSourceList) as Array<SourceTypes>;
+  for (let i = 0; i < savedSourceTypes.length; i++) {
+    const sourceType = savedSourceTypes[i];
+    const savedSourceNamesInType =  Object.keys(sourceType);
+      for (let j = 0; j < savedSourceNamesInType.length; j++) {
+        const sourceName = savedSourceNamesInType[i];
+        options.push({
+          label: `[${formatSourceTypeToReadable(sourceType)}] ${sourceName} (${savedSourceList[sourceType]?.[sourceName].url})`,
+          value: `${sourceType}-${sourceName}`,
+        })
+      }
   }
 
-  return new MessageActionRow().addComponents(
-    new MessageSelectMenu()
+  return new ActionRowBuilder<SelectMenuBuilder>().addComponents(
+    new SelectMenuBuilder()
       .setCustomId("select-saved-source")
       .addOptions(options)
   );
 };
 
-export { selectSourceTypeMenu, selectSavedSourceMenu };
+export { selectSavedSourcesMenu };
