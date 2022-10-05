@@ -9,7 +9,7 @@ const confirmOrCancelButton = (): ActionRowBuilder<ButtonBuilder> =>
     new ButtonBuilder()
       .setCustomId("confirm-no-button")
       .setLabel("Annuler")
-      .setStyle(ButtonStyle.Secondary),
+      .setStyle(ButtonStyle.Secondary)
   );
 
 export { confirmOrCancelButton };

@@ -1,8 +1,9 @@
+import axios from "axios";
 import { access, readFile, writeFile } from "fs";
 import path from "path";
 import { APIEmbedField } from "discord.js";
 import { Source, SourceList, SourceTypes } from "../types";
-import {blockQuote} from '@discordjs/builders';
+import { blockQuote } from "@discordjs/builders";
 
 const DATA_FILE_PATH = path.resolve(__dirname, "../sources.json");
 
@@ -15,9 +16,8 @@ const updateDataFile = (data: SourceList): Promise<void> => {
   });
 };
 
-const addSource = async (newData: Source): Promise<void> => {
-  console.log("addSource", newData);
-  const { type, name, url } = newData;
+const addSource = async ({ source }: { source: Source }): Promise<void> => {
+  const { id, type, name, url } = source;
   return new Promise<void>((resolve, reject) => {
     access(DATA_FILE_PATH, (err) => {
       const timestamp = new Date().toISOString();
@@ -25,7 +25,11 @@ const addSource = async (newData: Source): Promise<void> => {
       if (err) {
         writeFile(
           DATA_FILE_PATH,
-          JSON.stringify({ [type]: { [name]: { url, timestamp } } }, null, 2),
+          JSON.stringify(
+            { [type]: { [name]: { id, url, timestamp } } },
+            null,
+            2
+          ),
           (error) => {
             if (error) reject(error);
             resolve();
@@ -40,7 +44,7 @@ const addSource = async (newData: Source): Promise<void> => {
             ...parsedData,
             [type]: {
               ...parsedData[type],
-              [name]: { url, timestamp },
+              [name]: { id, url, timestamp },
             },
           };
 
@@ -57,7 +61,6 @@ const addSource = async (newData: Source): Promise<void> => {
 };
 
 const deleteSource = (sourceName: string): Promise<void> => {
-  console.log("deleteSource", { sourceName });
   return new Promise<void>((resolve, reject) => {
     readFile(DATA_FILE_PATH, "utf8", async (error, data) => {
       if (error) reject(error);
@@ -120,10 +123,10 @@ const formatSourceToBlockQuote = (source: Source): `>>> ${string}` => {
 
   return blockQuote(
     `Type : ${formatSourceTypeToReadable(type)}\n` +
-    `Chaîne : ${name}\n` +
-    `Url : ${url}`
+      `Chaîne : ${name}\n` +
+      `Url : ${url}`
   );
-}
+};
 
 const formatSourceListToEmbedField = (list: SourceList): APIEmbedField[] => {
   return Object.keys(list).reduce((acc: APIEmbedField[], key: string) => {
@@ -136,6 +139,71 @@ const formatSourceListToEmbedField = (list: SourceList): APIEmbedField[] => {
   }, []);
 };
 
+const formatYouTubeChannelToSource = (
+  channelData: any,
+  url: string
+): Source => {
+  // FIXME: youtube channel data should be typed.
+  // eslint-disable-next-line no-unsafe-optional-chaining
+  const { channelId: id, title: name } = channelData?.snippet;
+
+  return {
+    id,
+    type: SourceTypes.YOUTUBE,
+    name,
+    url,
+  };
+};
+
+const youTubeChannelUrlFormat = /youtube\.com\/(c\/{0,1})(\w+)/;
+const twitterUrlFormat = /twitter\.com\/(\w+)/;
+const instagramUrlFormat = /www\.instagram\.com\/(\w+)/;
+
+const youTubeApiBaseUrl = "https://www.googleapis.com/youtube/v3";
+const axiosOptions = { validateStatus: (status: number) => status === 200 };
+
+const getSourceFromUrl = ({ url }: { url: string }): Promise<Source | void> => {
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise<Source | void>(async (resolve, reject) => {
+    if (youTubeChannelUrlFormat.test(url)) {
+      // Should result in [ youtube.com/c/something, c/, something ] OR
+      // [ youtube.com/somthing, undefined, something ].
+      const matches = youTubeChannelUrlFormat.exec(url);
+      if (matches?.length && matches[2]) {
+        try {
+          const channelUrlName = matches[2];
+          const { data } = await axios.get(
+            `${youTubeApiBaseUrl}/search?part=snippet&q=${channelUrlName}&type=channel&key=${process.env.YOUTUBE_API_KEY}`,
+            axiosOptions
+          );
+          const channelData = data.items[0];
+
+          console.log("Url: ", url);
+          console.log("ChannelUrlName: ", channelUrlName);
+          console.log("YouTube Lookup Results: ", data.items);
+          console.log("Channel Found: ", channelData);
+
+          if (channelData) {
+            resolve(formatYouTubeChannelToSource(channelData, url));
+          } else {
+            reject(
+              "Aucune chaîne YouTube n'a pu être trouvée à partir de cette url."
+            );
+          }
+        } catch (err) {
+          reject(err);
+        }
+      } else reject();
+    } else if (twitterUrlFormat.test(url)) {
+      reject("Route non implémentée.");
+    } else if (instagramUrlFormat.test(url)) {
+      reject("Route non implémentée.");
+    } else {
+      reject("Route non implémentée.");
+    }
+  });
+};
+
 export {
   addSource,
   deleteSource,
@@ -143,5 +211,7 @@ export {
   formatSourceTypeToReadable,
   formatSourceToBlockQuote,
   formatSourceListToEmbedField,
+  formatYouTubeChannelToSource,
   isSourceListEmpty,
+  getSourceFromUrl,
 };

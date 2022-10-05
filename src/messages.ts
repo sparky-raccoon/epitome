@@ -4,7 +4,6 @@ import {
   APIEmbedField,
   blockQuote,
   bold,
-  ActionRowData,
 } from "discord.js";
 
 import {
@@ -14,7 +13,11 @@ import {
   SourceList,
   SourceTypes,
 } from "./types";
-import { formatSourceListToEmbedField, formatSourceTypeToReadable, formatSourceToBlockQuote } from "./utils/source";
+import {
+  formatSourceListToEmbedField,
+  formatSourceTypeToReadable,
+  formatSourceToBlockQuote,
+} from "./utils/source";
 import { confirmOrCancelButton } from "./components/confirm-button";
 import { selectSavedSourcesMenu } from "./components/select-menu";
 
@@ -28,10 +31,7 @@ const SourceColors: { [key in SourceTypes]: ColorResolvable } = {
   [SourceTypes.RSS]: "#ee802f",
 };
 
-const getMessage = (
-  type: MessageTypes,
-  data?: MessageData
-) => {
+const getMessage = (type: MessageTypes, data?: MessageData) => {
   let color: ColorResolvable = "#ffffff";
   let title = "✸ ";
   let description = "";
@@ -66,7 +66,9 @@ const getMessage = (
     case MessageTypes.YOUTUBE_NEWS:
     case MessageTypes.RSS_NEWS: {
       const { type: sourceType, name: sourceName } = data as Source;
-      title += `${formatSourceTypeToReadable(sourceType)} Nouvelle publication de ${sourceName}`;
+      title += `${formatSourceTypeToReadable(
+        sourceType
+      )} Nouvelle publication de ${sourceName}`;
       color = SourceColors[sourceType];
       break;
     }
@@ -126,9 +128,10 @@ const getMessage = (
     }
     case MessageTypes.ERROR: {
       title += "Erreur !";
+      const reason = data ? `Raison : “${data as string}"\n` : "";
       description =
         "Quelque chose ne tourne pas rond.\n" +
-        `Message : “ERR NETWORK FAILURE"\n` +
+        reason +
         "\n" +
         autoDestructionMessage;
     }
@@ -136,8 +139,7 @@ const getMessage = (
 
   const embed: EmbedBuilder = new EmbedBuilder()
     .setColor(color)
-    .setTitle(title)
-    .setTimestamp();
+    .setTitle(title);
 
   if (description) embed.setDescription(description);
   if (fields.length > 0) embed.setFields(fields);
