@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction } from "discord.js";
+import { ButtonInteraction, ChatInputCommandInteraction } from "discord.js";
 
 enum CommandTypes {
   ADD = "add",
@@ -38,6 +38,7 @@ type SourceList = {
     [name: string]: {
       id: string;
       url: string;
+      feed?: string;
       timestamp: string;
     };
   };
@@ -48,11 +49,12 @@ type Source = {
   type: SourceTypes;
   name: string;
   url: string;
+  feed?: string;
 };
 
 type FlowData = {
   userId: string;
-  interaction: ChatInputCommandInteraction;
+  interaction: ChatInputCommandInteraction | ButtonInteraction;
   cleanup: (userId: string) => void;
 };
 

@@ -21,9 +21,6 @@ import {
 import { confirmOrCancelButton } from "./components/confirm-button";
 import { selectSavedSourcesMenu } from "./components/select-menu";
 
-const autoDestructionMessage =
-  "Ce message s’auto-détruira dans quelques instants.";
-
 const SourceColors: { [key in SourceTypes]: ColorResolvable } = {
   [SourceTypes.INSTAGRAM]: "#e1306c",
   [SourceTypes.TWITTER]: "#1da1f2",
@@ -89,11 +86,9 @@ const getMessage = (type: MessageTypes, data?: MessageData) => {
       title += "Votre source a bien été ajoutée";
       description =
         `Vous retrouverez celle-ci parmi la liste des sources précédemment configurées avec la commande ${bold(
-          "!list"
+          "/list"
         )}\n` +
-        "Toute nouvelle publication sera partagée dans le canal Discord présent.\n" +
-        "\n" +
-        autoDestructionMessage;
+        "Toute nouvelle publication sera partagée dans le canal Discord présent.\n";
       break;
     }
     case MessageTypes.DELETE: {
@@ -113,27 +108,19 @@ const getMessage = (type: MessageTypes, data?: MessageData) => {
     }
     case MessageTypes.DELETE_SUCCESS: {
       title += "Votre source a bien été supprimée";
-      description =
-        `Vous ne serez plus notifié.es des dernières publications associées à celle-ci. Pour retrouver la liste des sources de publication présentement configurées, appelez la commande ${blockQuote(
-          "!list"
-        )}.\n` +
-        "\n" +
-        autoDestructionMessage;
+      description = `Vous ne serez plus notifié.es des dernières publications associées à celle-ci. Pour retrouver la liste des sources de publication présentement configurées, appelez la commande ${blockQuote(
+        "/list"
+      )}.`;
       break;
     }
     case MessageTypes.CANCEL: {
       title += "Procédure d’ajout / de suppression annulée";
-      description = autoDestructionMessage;
       break;
     }
     case MessageTypes.ERROR: {
       title += "Erreur !";
       const reason = data ? `Raison : “${data as string}"\n` : "";
-      description =
-        "Quelque chose ne tourne pas rond.\n" +
-        reason +
-        "\n" +
-        autoDestructionMessage;
+      description = "Quelque chose ne tourne pas rond.\n" + reason;
     }
   }
 
@@ -152,4 +139,4 @@ const getMessage = (type: MessageTypes, data?: MessageData) => {
   }
 };
 
-export { getMessage, autoDestructionMessage };
+export { getMessage };

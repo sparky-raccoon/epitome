@@ -57,11 +57,12 @@ client.on("interactionCreate", async (interaction) => {
     if (interaction.isButton()) {
       const isConfirmButtonClicked =
         interaction.customId === "confirm-yes-button";
-      flows[userId].send(isConfirmButtonClicked ? "confirmed" : "cancel");
+      flows[userId].update({
+        type: isConfirmButtonClicked ? "confirmed" : "cancel",
+        interaction,
+      });
     }
   }
 });
 
-client.login(process.env.TOKEN).then((res) => {
-  // console.log(res);
-});
+client.login(process.env.TOKEN);

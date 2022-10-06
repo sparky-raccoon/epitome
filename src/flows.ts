@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction } from "discord.js";
+import { ButtonInteraction } from "discord.js";
 import {
   createMachine,
   state,
@@ -32,12 +32,17 @@ const addMachine = (initialContext: AddMachineContext) =>
           "done",
           "waiting_for_confirmation",
           reduce(
-            (ctx: AddMachineContext, evt: { type: "done"; data: Source }) => ({
-              ...ctx,
-              source: evt.data,
-            })
+            (ctx: AddMachineContext, evt: { type: "done"; data: Source }) => {
+              console.log(evt);
+
+              return {
+                ...ctx,
+                source: evt.data,
+              };
+            }
           ),
           action(({ interaction, source }: AddMachineContext) => {
+            console.log(source);
             const message = getMessage(MessageTypes.ADD_CONFIRM, source);
             interaction.reply(message);
           })
@@ -64,10 +69,31 @@ const addMachine = (initialContext: AddMachineContext) =>
         )
       ),
       waiting_for_confirmation: state(
-        transition("confirm", "registering"),
+        transition(
+          "confirmed",
+          "registering",
+          reduce(
+            (
+              ctx: AddMachineContext,
+              evt: { type: "confirmed"; interaction: ButtonInteraction }
+            ) => ({
+              ...ctx,
+              interaction: evt.interaction,
+            })
+          )
+        ),
         transition(
           "cancel",
           "idle",
+          reduce(
+            (
+              ctx: AddMachineContext,
+              evt: { type: "cancel"; interaction: ButtonInteraction }
+            ) => ({
+              ...ctx,
+              interaction: evt.interaction,
+            })
+          ),
           action(({ interaction, userId, cleanup }: AddMachineContext) => {
             const message = getMessage(
               MessageTypes.ERROR,
@@ -161,7 +187,7 @@ class Flow {
     const { send } = interpret(
       this.machine,
       ({ machine, context }) => {
-        // console.log(machine.current, context);
+        console.log("Machine state change: ", machine.current);
       },
       initialContext
     );
