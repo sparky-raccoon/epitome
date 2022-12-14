@@ -61,7 +61,9 @@ client.on("interactionCreate", async (interaction) => {
         type: isConfirmButtonClicked ? "confirmed" : "cancel",
         interaction,
       });
-    }
+    } /* else if (interaction.isSelectMenu()) {
+      const selectedItem = interaction.
+    } */
   }
 });
 

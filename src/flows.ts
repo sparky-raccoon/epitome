@@ -20,8 +20,58 @@ import {
   ListMachineContext,
   MessageTypes,
   Source,
+  SourceList,
 } from "./types";
-import { addSource, getSourceFromUrl } from "./utils/source";
+import {
+  addSource,
+  deleteSource,
+  getSourceFromUrl,
+  listSources,
+} from "./utils/source";
+
+const waitingForConfirmation = (nextState: "registering" | "deleting") => state(
+  transition(
+    "confirmed",
+    nextState,
+    reduce(
+      (
+        ctx: AddMachineContext | DeleteMachineContext,
+        evt: { type: "confirmed"; interaction: ButtonInteraction }
+      ) => ({
+        ...ctx,
+        interaction: evt.interaction,
+      })
+    )
+  ),
+  transition(
+    "cancel",
+    "idle",
+    reduce(
+      (
+        ctx: AddMachineContext | DeleteMachineContext,
+        evt: { type: "cancel"; interaction: ButtonInteraction }
+      ) => ({
+        ...ctx,
+        interaction: evt.interaction,
+      })
+    ),
+    action(
+      ({
+        interaction,
+        userId,
+        cleanup,
+      }: AddMachineContext | DeleteMachineContext) => {
+        const message = getMessage(
+          MessageTypes.ERROR,
+          "La procédure d'ajout a été annulée."
+        );
+        interaction.reply(message);
+        cleanup(userId);
+      }
+    )
+  ),
+  transition("timeout", "idle")
+);
 
 const addMachine = (initialContext: AddMachineContext) =>
   createMachine(
@@ -68,43 +118,7 @@ const addMachine = (initialContext: AddMachineContext) =>
           )
         )
       ),
-      waiting_for_confirmation: state(
-        transition(
-          "confirmed",
-          "registering",
-          reduce(
-            (
-              ctx: AddMachineContext,
-              evt: { type: "confirmed"; interaction: ButtonInteraction }
-            ) => ({
-              ...ctx,
-              interaction: evt.interaction,
-            })
-          )
-        ),
-        transition(
-          "cancel",
-          "idle",
-          reduce(
-            (
-              ctx: AddMachineContext,
-              evt: { type: "cancel"; interaction: ButtonInteraction }
-            ) => ({
-              ...ctx,
-              interaction: evt.interaction,
-            })
-          ),
-          action(({ interaction, userId, cleanup }: AddMachineContext) => {
-            const message = getMessage(
-              MessageTypes.ERROR,
-              "La procédure d'ajout a été annulée."
-            );
-            interaction.reply(message);
-            cleanup(userId);
-          })
-        ),
-        transition("timeout", "idle")
-      ),
+      waiting_for_confirmation: waitingForConfirmation("registering"),
       registering: invoke(
         addSource,
         transition(
@@ -145,22 +159,95 @@ const addMachine = (initialContext: AddMachineContext) =>
 const deleteMachine = (initialContext: DeleteMachineContext) =>
   createMachine(
     {
-      reading: state(
-        transition("reading_complete", "waiting_for_selection"),
-        transition("reading_error", "idle"),
-        transition("cancel", "idle")
+      reading: invoke(
+        listSources,
+        transition(
+          "done",
+          "waiting_for_selection",
+          reduce(
+            (
+              ctx: DeleteMachineContext,
+              evt: { type: "done"; data: SourceList }
+            ) => {
+              console.log(evt);
+
+              return {
+                ...ctx,
+                sourceList: evt.data,
+              };
+            }
+          ),
+          action(({ interaction, sourceList }: DeleteMachineContext) => {
+            console.log(sourceList);
+            const message = getMessage(MessageTypes.DELETE, sourceList);
+            interaction.reply(message);
+          })
+        ),
+        transition(
+          "error",
+          "idle",
+          reduce(
+            (
+              ctx: DeleteMachineContext,
+              evt: { type: "error"; error: string }
+            ) => ({
+              ...ctx,
+              error: evt.error,
+            })
+          ),
+          action(
+            ({ interaction, error, userId, cleanup }: DeleteMachineContext) => {
+              const message = getMessage(MessageTypes.ERROR, error);
+              interaction.reply(message);
+              cleanup(userId);
+            }
+          )
+        )
       ),
       waiting_for_selection: state(
-        transition("selected", "waiting_for_confirmation"),
+        transition(
+          "selected",
+          "waiting_for_confirmation",
+          action(({ interaction, source }: DeleteMachineContext) => {
+            console.log(source);
+            const message = getMessage(MessageTypes.DELETE_CONFIRM, source);
+            interaction.reply(message);
+          })
+        ),
         transition("timeout", "idle")
       ),
-      waiting_for_confirmation: state(
-        transition("confirmed", "deleting"),
-        transition("timeout", "idle")
-      ),
-      deleting: state(
-        transition("deleting_complete", "idle"),
-        transition("deleting_error", "idle")
+      waiting_for_confirmation: waitingForConfirmation("deleting"),
+      deleting: invoke(
+        deleteSource,
+        transition(
+          "done",
+          "idle",
+          action(({ interaction, userId, cleanup }: DeleteMachineContext) => {
+            const message = getMessage(MessageTypes.DELETE_SUCCESS);
+            interaction.reply(message);
+            cleanup(userId);
+          })
+        ),
+        transition(
+          "error",
+          "idle",
+          reduce(
+            (
+              ctx: DeleteMachineContext,
+              evt: { type: "error"; error: string }
+            ) => ({
+              ...ctx,
+              error: evt.error,
+            })
+          ),
+          action(
+            ({ interaction, error, userId, cleanup }: DeleteMachineContext) => {
+              const message = getMessage(MessageTypes.ERROR, error);
+              interaction.reply(message);
+              cleanup(userId);
+            }
+          )
+        )
       ),
       idle: state(),
     },

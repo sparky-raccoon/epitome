@@ -65,6 +65,7 @@ type AddMachineContext = FlowData & {
 };
 
 type DeleteMachineContext = FlowData & {
+  sourceList?: SourceList;
   source?: Source;
   error?: string;
 };
