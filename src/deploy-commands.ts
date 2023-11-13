@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import { SlashCommandBuilder, Routes, REST } from "discord.js";
-import { CommandTypes } from "./types";
+import { Command } from "./constants";
 
 dotenv.config();
 
@@ -9,7 +9,7 @@ const { CLIENT_ID, GUILD_ID, TOKEN } = process.env;
 if (CLIENT_ID && GUILD_ID && TOKEN) {
   const commands = [
     new SlashCommandBuilder()
-      .setName(CommandTypes.ADD)
+      .setName(Command.ADD)
       .setDescription("Suivre une nouvelle source de publications.")
       .addStringOption((option) =>
         option
@@ -18,18 +18,18 @@ if (CLIENT_ID && GUILD_ID && TOKEN) {
           .setRequired(true)
       ),
     new SlashCommandBuilder()
-      .setName(CommandTypes.DELETE)
+      .setName(Command.DELETE)
       .setDescription("Supprimer une source de publications suivie."),
     new SlashCommandBuilder()
-      .setName(CommandTypes.CANCEL)
+      .setName(Command.CANCEL)
       .setDescription(
         "Annuler une procédure d’ajout ou de suppression de source en cours."
       ),
     new SlashCommandBuilder()
-      .setName(CommandTypes.LIST)
+      .setName(Command.LIST)
       .setDescription("Lister l’ensemble des sources suivies."),
     new SlashCommandBuilder()
-      .setName(CommandTypes.HELP)
+      .setName(Command.HELP)
       .setDescription("Afficher la liste des commandes."),
   ].map((command) => command.toJSON());
 

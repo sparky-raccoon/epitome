@@ -2,8 +2,8 @@ import axios from "axios";
 import { access, readFile, writeFile } from "fs";
 import path from "path";
 import { APIEmbedField, blockQuote } from "discord.js";
-
-import { Source, SourceList, SourceTypes } from "../types";
+import { SourceType } from "../constants";
+import { Source, SourceList } from "../types";
 
 const DATA_FILE_PATH = path.resolve(__dirname, "../sources.json");
 
@@ -91,7 +91,7 @@ const deleteSource = (sourceName: string): Promise<void> => {
 
 const listSources = (): Promise<SourceList> => {
   return new Promise<SourceList>((resolve, reject) => {
-    readFile(DATA_FILE_PATH, "utf8", async (error, data) => {
+    readFile(DATA_FILE_PATH, "utf8", (error, data) => {
       if (error) reject(error);
       resolve(JSON.parse(data));
     });
@@ -101,7 +101,7 @@ const listSources = (): Promise<SourceList> => {
 const isSourceListEmpty = (sourceList: SourceList): boolean => {
   let isEmpty = true;
   for (const sourceType in sourceList) {
-    for (const sourceObject in sourceList[sourceType as SourceTypes]) {
+    for (const sourceObject in sourceList[sourceType as SourceType]) {
       if (sourceObject) {
         isEmpty = false;
         break;
@@ -111,15 +111,15 @@ const isSourceListEmpty = (sourceList: SourceList): boolean => {
   return isEmpty;
 };
 
-const formatSourceTypeToReadable = (type: SourceTypes): string => {
+const formatSourceTypeToReadable = (type: SourceType): string => {
   switch (type) {
-    case SourceTypes.YOUTUBE:
+    case SourceType.YOUTUBE:
       return "YouTube";
-    case SourceTypes.INSTAGRAM:
+    case SourceType.INSTAGRAM:
       return "Instagram";
-    case SourceTypes.TWITTER:
+    case SourceType.TWITTER:
       return "Twitter";
-    case SourceTypes.RSS:
+    case SourceType.RSS:
       return "RSS";
   }
 };
@@ -136,8 +136,8 @@ const formatSourceToBlockQuote = (source: Source): `>>> ${string}` => {
 
 const formatSourceListToEmbedField = (list: SourceList): APIEmbedField[] => {
   return Object.keys(list).reduce((acc: APIEmbedField[], key: string) => {
-    const name = formatSourceTypeToReadable(key as SourceTypes);
-    const sourcesByType = list[key as SourceTypes];
+    const name = formatSourceTypeToReadable(key as SourceType);
+    const sourcesByType = list[key as SourceType];
     const sourceNamesByType = Object.keys(sourcesByType || {});
     if (sourceNamesByType.length > 0)
       return [...acc, { name, value: sourceNamesByType.join("\n") }];
@@ -155,7 +155,7 @@ const formatYouTubeChannelToSource = (
 
   return {
     id,
-    type: SourceTypes.YOUTUBE,
+    type: SourceType.YOUTUBE,
     name,
     url,
     feed: `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`,
@@ -168,11 +168,10 @@ const formatTwitterUserFeedToSource = (
 ): Source => {
   // FIXME: youtube channel data should be typed.
   const { id, name } = twitterData;
-  console.log(twitterData);
 
   return {
     id,
-    type: SourceTypes.TWITTER,
+    type: SourceType.TWITTER,
     name,
     url,
   };

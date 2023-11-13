@@ -5,30 +5,32 @@ import {
   blockQuote,
   bold,
 } from "discord.js";
-
-import {
-  MessageData,
-  MessageTypes,
-  Source,
-  SourceList,
-  SourceTypes,
-} from "./types";
+import { Message, SourceType } from "../constants";
+import { Source, SourceList } from "../types";
 import {
   formatSourceListToEmbedField,
   formatSourceTypeToReadable,
   formatSourceToBlockQuote,
-} from "./utils/source";
-import { confirmOrCancelButton } from "./components/confirm-button";
-import { selectSavedSourcesMenu } from "./components/select-menu";
+} from "./source";
+import { confirmOrCancelButton } from "../components/confirm-button";
+import { selectSavedSourcesMenu } from "../components/select-menu";
 
-const SourceColors: { [key in SourceTypes]: ColorResolvable } = {
-  [SourceTypes.INSTAGRAM]: "#e1306c",
-  [SourceTypes.TWITTER]: "#1da1f2",
-  [SourceTypes.YOUTUBE]: "#ff0000",
-  [SourceTypes.RSS]: "#ee802f",
+type MessageData = string | Source | SourceList;
+
+const getColorForSourceType = (sourceType: SourceType): ColorResolvable => {
+  switch (sourceType) {
+    case SourceType.INSTAGRAM:
+      return "#e1306c";
+    case SourceType.TWITTER:
+      return "#1da1f2";
+    case SourceType.YOUTUBE:
+      return "#ff0000";
+    case SourceType.RSS:
+      return "#ee802f";
+  }
 };
 
-const getMessage = (type: MessageTypes, data?: MessageData) => {
+const getMessage = (type: Message, data?: MessageData) => {
   let color: ColorResolvable = "#ffffff";
   let title = "✸ ";
   let description = "";
@@ -37,7 +39,7 @@ const getMessage = (type: MessageTypes, data?: MessageData) => {
   let component;
 
   switch (type) {
-    case MessageTypes.HELP: {
+    case Message.HELP: {
       title += "Ici Epitome";
       description =
         "Je suis un.e bot qui t’aidera à rester à jour vis à vis de sources d’informations telles que les journaux en ligne, les blogs et les réseaux sociaux. Il suffit de me dire quoi suivre, et je te retournerai les dernières publications dans le canal Discord où j’aurai été configuré.e.\n" +
@@ -58,23 +60,22 @@ const getMessage = (type: MessageTypes, data?: MessageData) => {
         )} - pour te rappeler qui je suis, et ce que je sais faire`;
       break;
     }
-    case MessageTypes.INSTAGRAM_NEWS:
-    case MessageTypes.TWITTER_NEWS:
-    case MessageTypes.YOUTUBE_NEWS:
-    case MessageTypes.RSS_NEWS: {
+    case Message.SOURCE_UPDATE: {
       const { type: sourceType, name: sourceName } = data as Source;
       title += `${formatSourceTypeToReadable(
         sourceType
       )} Nouvelle publication de ${sourceName}`;
-      color = SourceColors[sourceType];
+      color = getColorForSourceType(sourceType);
       break;
     }
-    case MessageTypes.LIST: {
+    case Message.LIST: {
       title += "Liste configurée des sources de publications";
-      fields = formatSourceListToEmbedField(data as SourceList);
+      if (Object.keys(data as SourceList).length === 0)
+        description = "Aucune source de publications configurée.";
+      else fields = formatSourceListToEmbedField(data as SourceList);
       break;
     }
-    case MessageTypes.ADD_CONFIRM: {
+    case Message.ADD_CONFIRM: {
       title += "Ajout d’une source de publications";
       description =
         "Vous êtes sur le point d’ajouter la source de publications suivante :\n" +
@@ -82,7 +83,7 @@ const getMessage = (type: MessageTypes, data?: MessageData) => {
       component = confirmOrCancelButton();
       break;
     }
-    case MessageTypes.ADD_SUCCESS: {
+    case Message.ADD_SUCCESS: {
       title += "Votre source a bien été ajoutée";
       description =
         `Vous retrouverez celle-ci parmi la liste des sources précédemment configurées avec la commande ${bold(
@@ -91,14 +92,14 @@ const getMessage = (type: MessageTypes, data?: MessageData) => {
         "Toute nouvelle publication sera partagée dans le canal Discord présent.\n";
       break;
     }
-    case MessageTypes.DELETE: {
+    case Message.DELETE_SELECT: {
       title += "Suppression d’une source de publications suivie";
       description =
         "Veuillez sélectionner la source à supprimer dans la liste ci-dessous :";
       component = selectSavedSourcesMenu(data as SourceList);
       break;
     }
-    case MessageTypes.DELETE_CONFIRM: {
+    case Message.DELETE_CONFIRM: {
       title += "Suppression d’une source de publiciations suivie";
       description =
         "Vous êtes sur le point de supprimer la source de publications suivante :\n" +
@@ -106,18 +107,18 @@ const getMessage = (type: MessageTypes, data?: MessageData) => {
       component = confirmOrCancelButton();
       break;
     }
-    case MessageTypes.DELETE_SUCCESS: {
+    case Message.DELETE_SUCCESS: {
       title += "Votre source a bien été supprimée";
       description = `Vous ne serez plus notifié.es des dernières publications associées à celle-ci. Pour retrouver la liste des sources de publication présentement configurées, appelez la commande ${blockQuote(
         "/list"
       )}.`;
       break;
     }
-    case MessageTypes.CANCEL: {
+    case Message.CANCEL: {
       title += "Procédure d’ajout / de suppression annulée";
       break;
     }
-    case MessageTypes.ERROR: {
+    case Message.ERROR: {
       title += "Erreur !";
       const reason = data ? `Raison : “${data as string}"\n` : "";
       description = "Quelque chose ne tourne pas rond.\n" + reason;
@@ -132,11 +133,9 @@ const getMessage = (type: MessageTypes, data?: MessageData) => {
   if (fields.length > 0) embed.setFields(fields);
   if (imageUrl) embed.setImage(imageUrl);
 
-  if (component) {
-    return { embeds: [embed], components: [component], ephemeral: true };
-  } else {
-    return { embeds: [embed], ephemeral: true };
-  }
+  return component
+    ? { embeds: [embed], components: [component], ephemeral: true }
+    : { embeds: [embed], ephemeral: true };
 };
 
 export { getMessage };

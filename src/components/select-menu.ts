@@ -1,14 +1,15 @@
 import { ActionRowBuilder, SelectMenuBuilder } from "discord.js";
-import { SourceList, SourceTypes } from "../types";
+import { SourceType } from "../constants";
+import { SourceList } from "../types";
 import { formatSourceTypeToReadable } from "../utils/source";
 
 const selectSavedSourcesMenu = (
   savedSourceList: SourceList
 ): ActionRowBuilder<SelectMenuBuilder> => {
   const options = [];
-  const savedSourceTypes = Object.keys(savedSourceList) as Array<SourceTypes>;
-  for (let i = 0; i < savedSourceTypes.length; i++) {
-    const sourceType = savedSourceTypes[i];
+  const savedSourceType = Object.keys(savedSourceList) as Array<SourceType>;
+  for (let i = 0; i < savedSourceType.length; i++) {
+    const sourceType = savedSourceType[i];
     const savedSourceNamesInType = Object.keys(sourceType);
     for (let j = 0; j < savedSourceNamesInType.length; j++) {
       const sourceName = savedSourceNamesInType[i];
