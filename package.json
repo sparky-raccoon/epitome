@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "wakeup": "ts-node src/index.ts",
+    "wakeup": "nodemon src/index.ts",
     "deploy-commands": "ts-node src/deploy-commands.ts",
     "lint": "eslint . --ext .ts",
     "format": "prettier --ignore-path .gitignore --write .",
@@ -26,6 +26,7 @@
     "discord-api-types": "^0.37.11",
     "discord.js": "^14.5.0",
     "dotenv": "^16.0.0",
+    "nodemon": "^3.0.1",
     "robot3": "^0.3.1",
     "rss-parser": "^3.12.0"
   },
