@@ -2,8 +2,8 @@ import axios from "axios";
 import { access, readFile, writeFile } from "fs";
 import path from "path";
 import { APIEmbedField, blockQuote } from "discord.js";
-import { SourceType } from "../constants";
-import { Source, SourceList } from "../types";
+import { SourceType } from "@/constants";
+import { Source, SourceList } from "@/types";
 
 const DATA_FILE_PATH = path.resolve(__dirname, "../sources.json");
 

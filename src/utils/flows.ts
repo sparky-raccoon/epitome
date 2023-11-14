@@ -11,15 +11,15 @@ import {
   SendFunction,
   SendEvent,
 } from "robot3";
-import { getMessage } from "./messages";
-import { Message } from "../constants";
-import { Source, SourceList } from "../types";
+import { Message } from "@/constants";
+import { Source, SourceList } from "@/types";
+import { getMessage } from "@/utils/messages";
 import {
   addSource,
   deleteSource,
   getSourceFromUrl,
   listSources,
-} from "./source";
+} from "@/utils/source";
 
 type FlowData = {
   userId: string;

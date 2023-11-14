@@ -1,7 +1,7 @@
 import { ActionRowBuilder, SelectMenuBuilder } from "discord.js";
-import { SourceType } from "../constants";
-import { SourceList } from "../types";
-import { formatSourceTypeToReadable } from "../utils/source";
+import { SourceType } from "@/constants";
+import { SourceList } from "@/types";
+import { formatSourceTypeToReadable } from "@/utils/source";
 
 const selectSavedSourcesMenu = (
   savedSourceList: SourceList

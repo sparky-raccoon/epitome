@@ -1,9 +1,8 @@
 import dotenv from "dotenv";
 import { Client, GatewayIntentBits } from "discord.js";
-
-import { Command, Message } from "./constants";
-import { getMessage } from "./utils/messages";
-import { AddFlow, DeleteFlow, ListFlow } from "./utils/flows";
+import { Command, Message } from "@/constants";
+import { getMessage } from "@/utils/messages";
+import { AddFlow, DeleteFlow, ListFlow } from "@/utils/flows";
 
 dotenv.config();
 

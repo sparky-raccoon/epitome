@@ -5,15 +5,15 @@ import {
   blockQuote,
   bold,
 } from "discord.js";
-import { Message, SourceType } from "../constants";
-import { Source, SourceList } from "../types";
+import { Message, SourceType } from "@/constants";
+import { Source, SourceList } from "@/types";
 import {
   formatSourceListToEmbedField,
   formatSourceTypeToReadable,
   formatSourceToBlockQuote,
-} from "./source";
-import { confirmOrCancelButton } from "../components/confirm-button";
-import { selectSavedSourcesMenu } from "../components/select-menu";
+} from "@/utils/source";
+import { confirmOrCancelButton } from "@/components/confirm-button";
+import { selectSavedSourcesMenu } from "@/components/select-menu";
 
 type MessageData = string | Source | SourceList;
 
