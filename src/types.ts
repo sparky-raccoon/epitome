@@ -11,12 +11,12 @@ type SourceList = {
   };
 };
 
-type Source = {
+interface Source {
   id: string;
   type: SourceType;
   name: string;
   url: string;
   feed?: string;
-};
+}
 
 export { SourceList, Source };

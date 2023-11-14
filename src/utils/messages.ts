@@ -15,8 +15,6 @@ import {
 import { confirmOrCancelButton } from "@/components/confirm-button";
 import { selectSavedSourcesMenu } from "@/components/select-menu";
 
-type MessageData = string | Source | SourceList;
-
 const getColorForSourceType = (sourceType: SourceType): ColorResolvable => {
   switch (sourceType) {
     case SourceType.INSTAGRAM:
@@ -30,7 +28,7 @@ const getColorForSourceType = (sourceType: SourceType): ColorResolvable => {
   }
 };
 
-const getMessage = (type: Message, data?: MessageData) => {
+const getMessage = (type: Message, data?: Source | SourceList | string) => {
   let color: ColorResolvable = "#ffffff";
   let title = "✸ ";
   let description = "";
@@ -69,7 +67,7 @@ const getMessage = (type: Message, data?: MessageData) => {
       break;
     }
     case Message.LIST: {
-      title += "Liste configurée des sources de publications";
+      title += "Liste des sources de publications suivies";
       if (Object.keys(data as SourceList).length === 0)
         description = "Aucune source de publications configurée.";
       else fields = formatSourceListToEmbedField(data as SourceList);
@@ -115,7 +113,7 @@ const getMessage = (type: Message, data?: MessageData) => {
       break;
     }
     case Message.CANCEL: {
-      title += "Procédure d’ajout / de suppression annulée";
+      title += "Procédure annulée";
       break;
     }
     case Message.ERROR: {

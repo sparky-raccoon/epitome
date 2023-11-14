@@ -21,88 +21,81 @@ import {
   listSources,
 } from "@/utils/source";
 
-type FlowData = {
+interface BaseContext {
   userId: string;
   interaction: ChatInputCommandInteraction | ButtonInteraction;
   cleanup: (userId: string) => void;
-};
+}
 
-type AddMachineContext = FlowData & {
+interface AddContext extends BaseContext {
   url: string;
   source?: Source;
   error?: string;
-};
+}
 
-type DeleteMachineContext = FlowData & {
+interface DeleteContext extends BaseContext {
   sourceList?: SourceList;
   source?: Source;
   error?: string;
-};
+}
 
-type ListMachineContext = FlowData & {
+interface ListContext extends BaseContext {
   sourceList?: SourceList;
   error?: string;
-};
+}
+
+type AnyContext = AddContext | DeleteContext | ListContext;
 
 const errorTransition = transition(
   "error",
   "idle",
-  reduce((ctx: any, evt: { type: "error"; error: string }) => ({
+  reduce((ctx: AnyContext, evt: { type: "error"; error: string }) => ({
     ...ctx,
     error: evt.error,
   })),
-  action(({ interaction, error, userId, cleanup }: any) => {
+  action(({ interaction, error, userId, cleanup }: AnyContext) => {
     interaction.reply(getMessage(Message.ERROR, error));
     cleanup(userId);
   })
 );
 
-const waitingForConfirmation = (nextState: "registering" | "deleting") =>
-  state(
-    transition(
-      "confirmed",
-      nextState,
-      reduce(
-        (
-          ctx: AddMachineContext | DeleteMachineContext,
-          evt: { type: "confirmed"; interaction: ButtonInteraction }
-        ) => ({
-          ...ctx,
-          interaction: evt.interaction,
-        })
-      )
+const waitingForConfirmationState = state(
+  transition(
+    "confirmed",
+    "proceeding",
+    reduce(
+      (
+        ctx: AnyContext,
+        evt: { type: "confirmed"; interaction: ButtonInteraction }
+      ) => ({
+        ...ctx,
+        interaction: evt.interaction,
+      })
+    )
+  ),
+  transition(
+    "cancel",
+    "idle",
+    reduce(
+      (
+        ctx: AnyContext,
+        evt: { type: "cancel"; interaction: ButtonInteraction }
+      ) => ({
+        ...ctx,
+        interaction: evt.interaction,
+      })
     ),
-    transition(
-      "cancel",
-      "idle",
-      reduce(
-        (
-          ctx: AddMachineContext | DeleteMachineContext,
-          evt: { type: "cancel"; interaction: ButtonInteraction }
-        ) => ({
-          ...ctx,
-          interaction: evt.interaction,
-        })
-      ),
-      action(
-        ({
-          interaction,
-          userId,
-          cleanup,
-        }: AddMachineContext | DeleteMachineContext) => {
-          const message = getMessage(
-            Message.ERROR,
-            "La procédure d'ajout a été annulée."
-          );
-          interaction.reply(message);
-          cleanup(userId);
-        }
-      )
-    ),
-    transition("timeout", "idle")
-  );
+    action(({ interaction, userId, cleanup }: AnyContext) => {
+      interaction.reply(
+        getMessage(Message.ERROR, "La procédure a été annulée.")
+      );
+      cleanup(userId);
+    })
+  ),
+  transition("timeout", "idle")
+);
 
-const addMachine = (initialContext: AddMachineContext) =>
+const addMachine = (initialContext: AddContext) =>
   createMachine(
     {
       searching: invoke(
@@ -110,25 +103,23 @@ const addMachine = (initialContext: AddMachineContext) =>
         transition(
           "done",
           "waiting_for_confirmation",
-          reduce(
-            (ctx: AddMachineContext, evt: { type: "done"; data: Source }) => ({
-              ...ctx,
-              source: evt.data,
-            })
-          ),
-          action(({ interaction, source }: AddMachineContext) => {
+          reduce((ctx: AddContext, evt: { type: "done"; data: Source }) => ({
+            ...ctx,
+            source: evt.data,
+          })),
+          action(({ interaction, source }: AddContext) => {
             interaction.reply(getMessage(Message.ADD_CONFIRM, source));
           })
         ),
         errorTransition
       ),
-      waiting_for_confirmation: waitingForConfirmation("registering"),
-      registering: invoke(
+      waiting_for_confirmation: waitingForConfirmationState,
+      proceeding: invoke(
         addSource,
         transition(
           "done",
           "idle",
-          action(({ interaction, userId, cleanup }: AddMachineContext) => {
+          action(({ interaction, userId, cleanup }: AddContext) => {
             interaction.reply(getMessage(Message.ADD_SUCCESS));
             cleanup(userId);
           })
@@ -140,7 +131,7 @@ const addMachine = (initialContext: AddMachineContext) =>
     () => ({ ...initialContext })
   );
 
-const deleteMachine = (initialContext: DeleteMachineContext) =>
+const deleteMachine = (initialContext: DeleteContext) =>
   createMachine(
     {
       reading: invoke(
@@ -149,15 +140,12 @@ const deleteMachine = (initialContext: DeleteMachineContext) =>
           "done",
           "waiting_for_selection",
           reduce(
-            (
-              ctx: DeleteMachineContext,
-              evt: { type: "done"; data: SourceList }
-            ) => ({
+            (ctx: DeleteContext, evt: { type: "done"; data: SourceList }) => ({
               ...ctx,
               sourceList: evt.data,
             })
           ),
-          action(({ interaction, sourceList }: DeleteMachineContext) => {
+          action(({ interaction, sourceList }: DeleteContext) => {
             interaction.reply(getMessage(Message.DELETE_SELECT, sourceList));
           })
         ),
@@ -167,19 +155,19 @@ const deleteMachine = (initialContext: DeleteMachineContext) =>
         transition(
           "selected",
           "waiting_for_confirmation",
-          action(({ interaction, source }: DeleteMachineContext) => {
+          action(({ interaction, source }: DeleteContext) => {
             interaction.reply(getMessage(Message.DELETE_CONFIRM, source));
           })
         ),
         transition("timeout", "idle")
       ),
-      waiting_for_confirmation: waitingForConfirmation("deleting"),
-      deleting: invoke(
+      waiting_for_confirmation: waitingForConfirmationState,
+      proceeding: invoke(
         deleteSource,
         transition(
           "done",
           "idle",
-          action(({ interaction, userId, cleanup }: DeleteMachineContext) => {
+          action(({ interaction, userId, cleanup }: DeleteContext) => {
             interaction.reply(getMessage(Message.DELETE_SUCCESS));
             cleanup(userId);
           })
@@ -191,7 +179,7 @@ const deleteMachine = (initialContext: DeleteMachineContext) =>
     () => initialContext
   );
 
-const listMachine = (initialContext: ListMachineContext) =>
+const listMachine = (initialContext: ListContext) =>
   createMachine(
     {
       reading: invoke(
@@ -200,10 +188,7 @@ const listMachine = (initialContext: ListMachineContext) =>
           "done",
           "idle",
           reduce(
-            (
-              ctx: DeleteMachineContext,
-              evt: { type: "done"; data: SourceList }
-            ) => ({
+            (ctx: DeleteContext, evt: { type: "done"; data: SourceList }) => ({
               ...ctx,
               sourceList: evt.data,
             })
@@ -224,7 +209,7 @@ class Flow {
   machine: Machine;
   send: SendFunction<SendEvent>;
 
-  constructor(machine: Machine, initialContext: any) {
+  constructor(machine: Machine, initialContext: AnyContext) {
     this.machine = machine;
     const { send } = interpret(
       this.machine,
@@ -249,8 +234,8 @@ class AddFlow extends Flow {
     interaction,
     url,
     cleanup,
-  }: FlowData & { url: string }) {
-    const initialContext: AddMachineContext = {
+  }: BaseContext & { url: string }) {
+    const initialContext: AddContext = {
       userId,
       interaction,
       url,
@@ -262,8 +247,8 @@ class AddFlow extends Flow {
 }
 
 class DeleteFlow extends Flow {
-  constructor({ userId, interaction, cleanup }: FlowData) {
-    const initialContext: DeleteMachineContext = {
+  constructor({ userId, interaction, cleanup }: BaseContext) {
+    const initialContext: DeleteContext = {
       userId,
       interaction,
       cleanup,
@@ -274,8 +259,8 @@ class DeleteFlow extends Flow {
 }
 
 class ListFlow extends Flow {
-  constructor({ userId, interaction, cleanup }: FlowData) {
-    const initialContext: ListMachineContext = {
+  constructor({ userId, interaction, cleanup }: BaseContext) {
+    const initialContext: ListContext = {
       userId,
       interaction,
       cleanup,
