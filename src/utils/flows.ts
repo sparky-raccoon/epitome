@@ -226,7 +226,11 @@ class Flow {
 
   constructor(machine: Machine, initialContext: any) {
     this.machine = machine;
-    const { send } = interpret(this.machine, undefined, initialContext);
+    const { send } = interpret(
+      this.machine,
+      (ev) => console.log(ev),
+      initialContext
+    );
     this.send = send;
   }
 
