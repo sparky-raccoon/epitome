@@ -11,7 +11,7 @@ import {
   formatSourceListToEmbedField,
   formatSourceTypeToReadable,
   formatSourceToBlockQuote,
-} from "@/utils/source";
+} from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
 import { selectSavedSourcesMenu } from "@/components/select-menu";
 

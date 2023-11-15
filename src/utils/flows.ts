@@ -14,12 +14,8 @@ import {
 import { Message } from "@/constants";
 import { Source, SourceList } from "@/types";
 import { getMessage } from "@/utils/messages";
-import {
-  addSource,
-  deleteSource,
-  getSourceFromUrl,
-  listSources,
-} from "@/utils/source";
+import { addSource, deleteSource, listSources } from "@/utils/source";
+import { getSourceFromUrl } from "@/utils/validators";
 
 interface BaseContext {
   userId: string;
@@ -213,7 +209,7 @@ class Flow {
     this.machine = machine;
     const { send } = interpret(
       this.machine,
-      () => console.log("STATE CHANGE", this.machine.current),
+      () => console.log(this.machine.current),
       initialContext
     );
     this.send = send;
