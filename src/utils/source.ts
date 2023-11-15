@@ -1,6 +1,7 @@
 import { open, close, access, readFile, writeFile } from "fs";
 import path from "path";
 import { Source, SourceList } from "@/types";
+import { SourceType } from "@/constants";
 
 const DATA_FILE_PATH = path.resolve(__dirname, "../sources.json");
 
@@ -14,7 +15,7 @@ const updateDataFile = (data: SourceList): Promise<void> => {
 };
 
 const addSource = async ({ source }: { source: Source }): Promise<void> => {
-  const { id, type, name, url, feed } = source;
+  const { type, name, url, feed } = source;
   return new Promise<void>((resolve, reject) => {
     access(DATA_FILE_PATH, (err) => {
       const timestamp = new Date().toISOString();
@@ -23,7 +24,7 @@ const addSource = async ({ source }: { source: Source }): Promise<void> => {
         writeFile(
           DATA_FILE_PATH,
           JSON.stringify(
-            { [type]: { [name]: { id, url, timestamp, feed } } },
+            { [type]: { [name]: { url, timestamp, feed } } },
             null,
             2
           ),
@@ -41,7 +42,7 @@ const addSource = async ({ source }: { source: Source }): Promise<void> => {
             ...parsedData,
             [type]: {
               ...parsedData[type],
-              [name]: { id, url, timestamp, feed },
+              [name]: { url, timestamp, feed },
             },
           };
 
@@ -57,31 +58,30 @@ const addSource = async ({ source }: { source: Source }): Promise<void> => {
   });
 };
 
-const deleteSource = (sourceName: string): Promise<void> => {
+const deleteSource = (
+  sourceName: string,
+  sourceType: SourceType
+): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
-    readFile(DATA_FILE_PATH, "utf8", async (error, data) => {
-      if (error) reject(error);
+    open(DATA_FILE_PATH, "r", (openError, fileHandler) => {
+      if (openError) return reject(openError);
 
-      const parsedData = JSON.parse(data);
-      for (const sourceType in parsedData) {
-        if (Object.keys(parsedData[sourceType]).includes(sourceName)) {
-          delete parsedData[sourceType][sourceName];
-          break;
-        } else {
-          // Rare case where 2 different users are in a delete process to withdraw the
-          // same source, one of them being faster.
-          reject(
-            "Cette source de publications a déjà été supprimée. Quelqu'un.e vous a devancé.e!"
-          );
-        }
-      }
+      readFile(DATA_FILE_PATH, "utf8", (readError, data) => {
+        close(fileHandler, () => {
+          if (readError) return reject(readError);
 
-      try {
-        await updateDataFile(parsedData);
-        resolve();
-      } catch (e) {
-        reject(e);
-      }
+          const parsedData = JSON.parse(data);
+          if (Object.keys(parsedData[sourceType]).includes(sourceName)) {
+            delete parsedData[sourceType][sourceName];
+          } else {
+            return reject("Cette source de publications a déjà été supprimée.");
+          }
+
+          return updateDataFile(parsedData)
+            .then(() => resolve())
+            .catch((e) => reject(e));
+        });
+      });
     });
   });
 };
@@ -95,10 +95,8 @@ const listSources = async (): Promise<SourceList> => {
       }
 
       readFile(DATA_FILE_PATH, "utf8", (readError, data) => {
-        if (readError) return reject(readError);
-
-        close(fileHandler, (closeError) => {
-          if (closeError) console.error(closeError);
+        close(fileHandler, () => {
+          if (readError) return reject(readError);
           return resolve(JSON.parse(data));
         });
       });

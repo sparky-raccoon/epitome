@@ -24,10 +24,9 @@
   "dependencies": {
     "axios": "^0.27.2",
     "discord-api-types": "^0.37.11",
-    "discord.js": "^14.5.0",
+    "discord.js": "^14.14.0",
     "dotenv": "^16.0.0",
     "nodemon": "^3.0.1",
-    "robot3": "^0.3.1",
     "rss-parser": "^3.12.0"
   },
   "devDependencies": {

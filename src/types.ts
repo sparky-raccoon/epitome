@@ -2,21 +2,19 @@ import { SourceType } from "./constants";
 
 type SourceList = {
   [type in SourceType]?: {
-    [name: string]: {
-      id: string;
-      url: string;
-      feed?: string;
-      timestamp: string;
-    };
+    [name: string]: SourceTrackingData;
   };
 };
 
-interface Source {
-  id: string;
-  type: SourceType;
-  name: string;
+interface SourceTrackingData {
   url: string;
   feed?: string;
+  timestamp: string;
+}
+
+interface Source extends Omit<SourceTrackingData, "timestamp"> {
+  type: SourceType;
+  name: string;
 }
 
 export { SourceList, Source };

@@ -45,7 +45,6 @@ const formatYouTubeChannelToSource = (
   const { channelId: id, title: name } = channelData?.snippet;
 
   return {
-    id,
     type: SourceType.YOUTUBE,
     name,
     url,
@@ -58,10 +57,9 @@ const formatTwitterUserFeedToSource = (
   url: string
 ): Source => {
   // FIXME: youtube channel data should be typed.
-  const { id, name } = twitterData;
+  const { name } = twitterData;
 
   return {
-    id,
     type: SourceType.TWITTER,
     name,
     url,

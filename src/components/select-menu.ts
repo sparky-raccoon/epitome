@@ -1,29 +1,28 @@
-import { ActionRowBuilder, SelectMenuBuilder } from "discord.js";
-import { SourceType } from "@/constants";
+import { ActionRowBuilder, StringSelectMenuBuilder } from "discord.js";
 import { SourceList } from "@/types";
 import { formatSourceTypeToReadable } from "@/utils/formatters";
+import { SourceType } from "@/constants";
 
 const selectSavedSourcesMenu = (
   savedSourceList: SourceList
-): ActionRowBuilder<SelectMenuBuilder> => {
+): ActionRowBuilder<StringSelectMenuBuilder> => {
   const options = [];
-  const savedSourceType = Object.keys(savedSourceList) as Array<SourceType>;
-  for (let i = 0; i < savedSourceType.length; i++) {
-    const sourceType = savedSourceType[i];
-    const savedSourceNamesInType = Object.keys(sourceType);
-    for (let j = 0; j < savedSourceNamesInType.length; j++) {
-      const sourceName = savedSourceNamesInType[i];
+
+  for (const sourceType in savedSourceList) {
+    for (const sourceName in savedSourceList[sourceType as SourceType]) {
       options.push({
-        label: `[${formatSourceTypeToReadable(sourceType)}] ${sourceName} (${
-          savedSourceList[sourceType]?.[sourceName].url
+        label: `[${formatSourceTypeToReadable(
+          sourceType as SourceType
+        )}] ${sourceName} (${
+          savedSourceList[sourceType as SourceType]?.[sourceName]?.url
         })`,
         value: `${sourceType}-${sourceName}`,
       });
     }
   }
 
-  return new ActionRowBuilder<SelectMenuBuilder>().addComponents(
-    new SelectMenuBuilder()
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    new StringSelectMenuBuilder()
       .setCustomId("select-saved-source")
       .addOptions(options)
   );

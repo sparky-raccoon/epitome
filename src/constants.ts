@@ -26,4 +26,16 @@ enum SourceType {
   RSS = "rss",
 }
 
-export { Command, Message, SourceType };
+const INTERNAL_ERROR = "Erreur interne.";
+
+const BUTTON_CONFIRM_ID = "confirm-yes-button";
+const BUTTON_CANCEL_ID = "confirm-no-button";
+
+export {
+  Command,
+  Message,
+  SourceType,
+  INTERNAL_ERROR,
+  BUTTON_CONFIRM_ID,
+  BUTTON_CANCEL_ID,
+};

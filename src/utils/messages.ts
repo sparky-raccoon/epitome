@@ -1,10 +1,4 @@
-import {
-  ColorResolvable,
-  EmbedBuilder,
-  APIEmbedField,
-  blockQuote,
-  bold,
-} from "discord.js";
+import { ColorResolvable, EmbedBuilder, APIEmbedField, bold } from "discord.js";
 import { Message, SourceType } from "@/constants";
 import { Source, SourceList } from "@/types";
 import {
@@ -107,19 +101,17 @@ const getMessage = (type: Message, data?: Source | SourceList | string) => {
     }
     case Message.DELETE_SUCCESS: {
       title += "Votre source a bien été supprimée";
-      description = `Vous ne serez plus notifié.es des dernières publications associées à celle-ci. Pour retrouver la liste des sources de publication présentement configurées, appelez la commande ${blockQuote(
-        "/list"
-      )}.`;
+      description = `Vous ne serez plus notifié.es des dernières publications associées à celle-ci. Pour retrouver la liste des sources de publication présentement configurées, appelez la commande \`/list\``;
       break;
     }
     case Message.CANCEL: {
-      title += "Procédure annulée";
+      title += "Procédure d'ajout / de mise à jour / de suppression annulée";
+      description = "Ce message s'auto-détruira dans quelques instants.";
       break;
     }
     case Message.ERROR: {
       title += "Erreur !";
-      const reason = data ? `Raison : “${data as string}"\n` : "";
-      description = "Quelque chose ne tourne pas rond.\n" + reason;
+      description = "Quelque chose ne tourne pas rond.\n" + (data as string);
     }
   }
 
@@ -133,7 +125,7 @@ const getMessage = (type: Message, data?: Source | SourceList | string) => {
 
   return component
     ? { embeds: [embed], components: [component], ephemeral: true }
-    : { embeds: [embed], ephemeral: true };
+    : { embeds: [embed], components: [], ephemeral: true };
 };
 
 export { getMessage };
