@@ -1,5 +1,5 @@
 import axios from "axios";
-import { access, readFile, writeFile } from "fs";
+import { open, close, access, readFile, writeFile } from "fs";
 import path from "path";
 import { APIEmbedField, blockQuote } from "discord.js";
 import { SourceType } from "@/constants";
@@ -89,26 +89,24 @@ const deleteSource = (sourceName: string): Promise<void> => {
   });
 };
 
-const listSources = (): Promise<SourceList> => {
+const listSources = async (): Promise<SourceList> => {
   return new Promise<SourceList>((resolve, reject) => {
-    readFile(DATA_FILE_PATH, "utf8", (error, data) => {
-      if (error) reject(error);
-      resolve(JSON.parse(data));
+    open(DATA_FILE_PATH, "r", (openError, fileHandler) => {
+      if (openError) {
+        if (openError.code === "ENOENT") return resolve({});
+        else return reject(openError);
+      }
+
+      readFile(DATA_FILE_PATH, "utf8", (readError, data) => {
+        if (readError) return reject(readError);
+
+        close(fileHandler, (closeError) => {
+          if (closeError) console.error(closeError);
+          return resolve(JSON.parse(data));
+        });
+      });
     });
   });
-};
-
-const isSourceListEmpty = (sourceList: SourceList): boolean => {
-  let isEmpty = true;
-  for (const sourceType in sourceList) {
-    for (const sourceObject in sourceList[sourceType as SourceType]) {
-      if (sourceObject) {
-        isEmpty = false;
-        break;
-      }
-    }
-  }
-  return isEmpty;
 };
 
 const formatSourceTypeToReadable = (type: SourceType): string => {
@@ -261,6 +259,5 @@ export {
   formatSourceToBlockQuote,
   formatSourceListToEmbedField,
   formatYouTubeChannelToSource,
-  isSourceListEmpty,
   getSourceFromUrl,
 };

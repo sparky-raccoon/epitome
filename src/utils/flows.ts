@@ -213,7 +213,7 @@ class Flow {
     this.machine = machine;
     const { send } = interpret(
       this.machine,
-      (ev) => console.log(ev),
+      () => console.log("STATE CHANGE", this.machine.current),
       initialContext
     );
     this.send = send;
