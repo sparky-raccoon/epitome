@@ -4,11 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon",
-    "deploy-commands": "ts-node src/deploy-commands.ts",
-    "lint": "eslint . --ext .ts",
-    "format": "prettier --ignore-path .gitignore --write .",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsx watch src/index.ts",
+    "command": "tsx src/deploy-commands.ts",
     "prepare": "husky install"
   },
   "repository": {
@@ -23,10 +20,8 @@
   "homepage": "https://github.com/sparky-raccoon/epitome#readme",
   "dependencies": {
     "axios": "^0.27.2",
-    "discord-api-types": "^0.37.11",
     "discord.js": "^14.14.0",
     "dotenv": "^16.0.0",
-    "nodemon": "^3.0.1",
     "rss-parser": "^3.12.0"
   },
   "devDependencies": {
@@ -38,8 +33,8 @@
     "husky": ">=6",
     "lint-staged": ">=10",
     "prettier": "^2.6.2",
-    "ts-node": "^10.7.0",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.1.2",
     "typescript": "^4.6.3"
   },
   "lint-staged": {
