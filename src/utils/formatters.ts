@@ -26,13 +26,28 @@ const formatSourceToBlockQuote = (source: Source): `>>> ${string}` => {
 };
 
 const formatSourceListToEmbedField = (list: SourceList): APIEmbedField[] => {
-  return Object.keys(list).reduce((acc: APIEmbedField[], key: string) => {
-    const name = formatSourceTypeToReadable(key as SourceType);
-    const sourcesByType = list[key as SourceType];
-    const sourceNamesByType = Object.keys(sourcesByType || {});
-    if (sourceNamesByType.length > 0)
-      return [...acc, { name, value: sourceNamesByType.join("\n") }];
-    else return acc;
+  return Object.keys(list).reduce((acc: APIEmbedField[], type) => {
+    const typeName = formatSourceTypeToReadable(type as SourceType);
+    const sourcesByType = list[type as SourceType];
+
+    if (sourcesByType) {
+      const sourceNameAndUrls = [];
+      const sourceNames = Object.keys(sourcesByType);
+
+      if (sourceNames.length > 0) {
+        for (const sourceName of sourceNames) {
+          const source = sourcesByType[sourceName];
+          const { url: sourceUrl } = source;
+
+          sourceNameAndUrls.push(`${sourceName} (${sourceUrl})`);
+        }
+
+        return [
+          ...acc,
+          { name: typeName, value: sourceNameAndUrls.join("\n") },
+        ];
+      } else return acc;
+    } else return acc;
   }, []);
 };
 
