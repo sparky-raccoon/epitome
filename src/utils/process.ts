@@ -36,14 +36,29 @@ class Process {
   }
 
   async add() {
-    this.interaction.reply("add");
+    try {
+      const url = this.interaction.options.getString("url");
+      if (!url) throw new Error(INTERNAL_ERROR);
+      await this.interaction.reply("En cours de développement...");
+    } catch (err) {
+      if (err instanceof Error) this.error(err.message);
+      else if (typeof err === "string") this.error(err);
+    }
   }
 
   async delete() {
     try {
+      let message;
       const sourceList = await listSources();
-      let message = getMessage(Message.DELETE_SELECT, sourceList);
 
+      if (Object.keys(sourceList).length === 0) {
+        message = getMessage(Message.DELETE_NO_SAVED_SOURCES);
+        await this.interaction.reply(message);
+        this.terminate(this.interaction.user.id);
+        return;
+      }
+
+      message = getMessage(Message.DELETE_SELECT, sourceList);
       let response = await this.interaction.reply(message);
       const selectInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,

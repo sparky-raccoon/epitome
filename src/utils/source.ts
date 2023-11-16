@@ -1,57 +1,63 @@
-import { open, close, access, readFile, writeFile } from "fs";
+import { open, close, readFile, writeFile } from "fs";
 import path from "path";
-import { Source, SourceList } from "@/types";
+import { Source, SourceList, SourceTrackingData } from "@/types";
 import { SourceType } from "@/constants";
 
 const DATA_FILE_PATH = path.resolve(__dirname, "../sources.json");
 
-const updateDataFile = (data: SourceList): Promise<void> => {
+const writeFileAndClose = (
+  fileHandler: number,
+  data: SourceList
+): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
-    writeFile(DATA_FILE_PATH, JSON.stringify(data, null, 2), (error) => {
-      if (error) reject(error);
-      resolve();
+    writeFile(DATA_FILE_PATH, JSON.stringify(data, null, 2), (writeError) => {
+      close(fileHandler, () => {
+        if (writeError) return reject(writeError);
+        return resolve();
+      });
     });
   });
 };
 
-const addSource = async ({ source }: { source: Source }): Promise<void> => {
-  const { type, name, url, feed } = source;
+const addSource = (source: Source): Promise<void> => {
+  const { type, name, ...otherSourceData } = source;
+  const sourceTrackingData: SourceTrackingData = {
+    ...otherSourceData,
+    timestamp: Date.now().toString(),
+  };
+
   return new Promise<void>((resolve, reject) => {
-    access(DATA_FILE_PATH, (err) => {
-      const timestamp = new Date().toISOString();
-      // FIXME: there might be other kind of errors here than 'file not found'.
-      if (err) {
-        writeFile(
-          DATA_FILE_PATH,
-          JSON.stringify(
-            { [type]: { [name]: { url, timestamp, feed } } },
-            null,
-            2
-          ),
-          (error) => {
-            if (error) reject(error);
-            resolve();
-          }
-        );
+    open(DATA_FILE_PATH, "r", (openError, fileHandler) => {
+      if (openError) {
+        if (openError.code === "ENOENT") {
+          writeFileAndClose(fileHandler, {
+            [type]: { [name]: sourceTrackingData },
+          })
+            .then(() => {
+              return resolve();
+            })
+            .catch((e) => {
+              return reject(e);
+            });
+        } else return reject(openError);
       } else {
-        readFile(DATA_FILE_PATH, "utf8", async (error, data) => {
-          if (error) reject(error);
+        readFile(DATA_FILE_PATH, "utf8", (readError, data) => {
+          if (readError) return reject(readError);
 
           const parsedData = JSON.parse(data);
-          const newData = {
+          writeFileAndClose(fileHandler, {
             ...parsedData,
             [type]: {
               ...parsedData[type],
-              [name]: { url, timestamp, feed },
+              [name]: sourceTrackingData,
             },
-          };
-
-          try {
-            await updateDataFile(newData);
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
+          })
+            .then(() => {
+              return resolve();
+            })
+            .catch((e) => {
+              return reject(e);
+            });
         });
       }
     });
@@ -67,20 +73,23 @@ const deleteSource = (
       if (openError) return reject(openError);
 
       readFile(DATA_FILE_PATH, "utf8", (readError, data) => {
-        close(fileHandler, () => {
-          if (readError) return reject(readError);
+        if (readError) return reject(readError);
 
-          const parsedData = JSON.parse(data);
-          if (Object.keys(parsedData[sourceType]).includes(sourceName)) {
-            delete parsedData[sourceType][sourceName];
-          } else {
-            return reject("Cette source de publications a déjà été supprimée.");
-          }
+        const parsedData = JSON.parse(data);
+        if (Object.keys(parsedData[sourceType]).includes(sourceName)) {
+          delete parsedData[sourceType][sourceName];
+          if (Object.keys(parsedData[sourceType]).length === 0)
+            delete parsedData[sourceType];
+        } else
+          return reject("Cette source de publications a déjà été supprimée.");
 
-          return updateDataFile(parsedData)
-            .then(() => resolve())
-            .catch((e) => reject(e));
-        });
+        writeFileAndClose(fileHandler, parsedData)
+          .then(() => {
+            return resolve();
+          })
+          .catch(() => {
+            return reject();
+          });
       });
     });
   });

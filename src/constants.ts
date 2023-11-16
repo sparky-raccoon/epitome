@@ -15,6 +15,7 @@ enum Message {
   DELETE_SELECT = "delete_select",
   DELETE_CONFIRM = "delete_confirm",
   DELETE_SUCCESS = "delete_success",
+  DELETE_NO_SAVED_SOURCES = "delete_no_saved_sources",
   CANCEL = "cancel",
   ERROR = "error",
 }

@@ -34,20 +34,22 @@ const getMessage = (type: Message, data?: Source | SourceList | string) => {
     case Message.HELP: {
       title += "Ici Epitome";
       description =
-        "Je suis un.e bot qui t’aidera à rester à jour vis à vis de sources d’informations telles que les journaux en ligne, les blogs et les réseaux sociaux. Il suffit de me dire quoi suivre, et je te retournerai les dernières publications dans le canal Discord où j’aurai été configuré.e.\n" +
-        "\n" +
+        "Je suis un.e bot qui t’aidera à rester à jour vis à vis de sources" +
+        "d’informations telles que les journaux en ligne, les blogs et les réseaux sociaux." +
+        "Il suffit de me dire quoi suivre, et je te retournerai les dernières publications " +
+        "dans le canal Discord où j’aurai été configuré.e.\n" +
         "Voici la liste des commandes auxquelles je réponds :\n" +
         `▪︎ ${bold(
           "/add <url>"
-        )} pour suivre une nouvelle source de publications \n` +
+        )} pour suivre une nouvelle source de publications\n` +
         `▪︎ ${bold(
           "/delete"
-        )} - pour supprimer une source de publications suivie \n` +
+        )} - pour supprimer une source de publications suivie\n` +
         `▪︎ ${bold(
           "/cancel"
-        )} - pour annuler une procédure d’ajout ou de suppression en cours \n` +
+        )} - pour annuler une procédure d’ajout ou de suppression en cours\n` +
         `▪︎ ${bold("/list")} - pour lister l’ensemble des sources suivies\n` +
-        `︎︎▪︎ ${bold(
+        `▪︎ ${bold(
           "/help"
         )} - pour te rappeler qui je suis, et ce que je sais faire`;
       break;
@@ -63,7 +65,7 @@ const getMessage = (type: Message, data?: Source | SourceList | string) => {
     case Message.LIST: {
       title += "Liste des sources de publications suivies";
       if (Object.keys(data as SourceList).length === 0)
-        description = "Aucune source de publications configurée.";
+        description = "Aucune source de publications n'a été configurée.";
       else fields = formatSourceListToEmbedField(data as SourceList);
       break;
     }
@@ -87,21 +89,26 @@ const getMessage = (type: Message, data?: Source | SourceList | string) => {
     case Message.DELETE_SELECT: {
       title += "Suppression d’une source de publications suivie";
       description =
-        "Veuillez sélectionner la source à supprimer dans la liste ci-dessous :";
+        "Sélectionne la source de publications que tu souhaites supprimer dans la liste ci-dessous :";
       component = selectSavedSourcesMenu(data as SourceList);
       break;
     }
     case Message.DELETE_CONFIRM: {
       title += "Suppression d’une source de publiciations suivie";
       description =
-        "Vous êtes sur le point de supprimer la source de publications suivante :\n" +
+        "La source de publications suivante est sur le point d'être supprimée :\n" +
         formatSourceToBlockQuote(data as Source);
       component = confirmOrCancelButton();
       break;
     }
     case Message.DELETE_SUCCESS: {
-      title += "Votre source a bien été supprimée";
-      description = `Vous ne serez plus notifié.es des dernières publications associées à celle-ci. Pour retrouver la liste des sources de publication présentement configurées, appelez la commande \`/list\``;
+      title += "Suppression de la source effective.";
+      description = `Tu ne seras plus notifié.e des dernières publications associées à celle-ci. Pour retrouver la liste des sources de publication présentement configurées, appelez la commande \`/list\``;
+      break;
+    }
+    case Message.DELETE_NO_SAVED_SOURCES: {
+      title += "Suppression d’une source de publications suivie";
+      description = "Aucune source de publications n'a été configurée.";
       break;
     }
     case Message.CANCEL: {
