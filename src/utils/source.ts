@@ -6,15 +6,21 @@ import { SourceType } from "@/constants";
 const DATA_FILE_PATH = path.resolve(__dirname, "../sources.json");
 
 const writeFileAndClose = (
-  fileHandler: number,
+  fileHandler: number | undefined,
   data: SourceList
 ): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
     writeFile(DATA_FILE_PATH, JSON.stringify(data, null, 2), (writeError) => {
-      close(fileHandler, () => {
+      const returnResult = () => {
         if (writeError) return reject(writeError);
         return resolve();
-      });
+      };
+
+      if (fileHandler) {
+        close(fileHandler, () => {
+          returnResult();
+        });
+      } else returnResult();
     });
   });
 };
@@ -104,10 +110,16 @@ const listSources = async (): Promise<SourceList> => {
       }
 
       readFile(DATA_FILE_PATH, "utf8", (readError, data) => {
-        close(fileHandler, () => {
+        const returnResult = () => {
           if (readError) return reject(readError);
           return resolve(JSON.parse(data));
-        });
+        };
+
+        if (fileHandler) {
+          close(fileHandler, () => {
+            returnResult();
+          });
+        } else returnResult();
       });
     });
   });

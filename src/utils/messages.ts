@@ -79,11 +79,9 @@ const getMessage = (type: Message, data?: Source | SourceList | string) => {
     }
     case Message.ADD_SUCCESS: {
       title += "Votre source a bien été ajoutée";
-      description =
-        `Vous retrouverez celle-ci parmi la liste des sources précédemment configurées avec la commande ${bold(
-          "/list"
-        )}\n` +
-        "Toute nouvelle publication sera partagée dans le canal Discord présent.\n";
+      description = `Vous retrouverez celle-ci parmi la liste des sources précédemment configurées avec la commande ${bold(
+        "/list"
+      )}.`;
       break;
     }
     case Message.DELETE_SELECT: {
