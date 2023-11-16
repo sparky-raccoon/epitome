@@ -14,7 +14,6 @@ const TIMEOUT = 60000;
 class Process {
   interaction: ChatInputCommandInteraction;
   terminate: (userId: string) => void;
-  step: number;
 
   constructor(
     interaction: ChatInputCommandInteraction,
@@ -22,7 +21,6 @@ class Process {
   ) {
     this.interaction = interaction;
     this.terminate = terminate;
-    this.step = 0;
 
     switch (this.interaction.commandName) {
       case Command.ADD:
@@ -43,42 +41,40 @@ class Process {
 
   async delete() {
     try {
-      if (this.step === 0) {
-        const sourceList = await listSources();
-        let message = getMessage(Message.DELETE_SELECT, sourceList);
+      const sourceList = await listSources();
+      let message = getMessage(Message.DELETE_SELECT, sourceList);
 
-        let response = await this.interaction.reply(message);
-        const selectInteraction = await response.awaitMessageComponent({
-          time: TIMEOUT,
-          componentType: ComponentType.StringSelect,
-        });
-        const selectedValue = selectInteraction.values[0];
-        const [type, name] = selectedValue.split("-");
-        const selectedIncompleteSource = sourceList[type as SourceType]?.[name];
+      let response = await this.interaction.reply(message);
+      const selectInteraction = await response.awaitMessageComponent({
+        time: TIMEOUT,
+        componentType: ComponentType.StringSelect,
+      });
+      const selectedValue = selectInteraction.values[0];
+      const [type, name] = selectedValue.split("-");
+      const selectedIncompleteSource = sourceList[type as SourceType]?.[name];
 
-        if (!selectedIncompleteSource) throw new Error(INTERNAL_ERROR);
+      if (!selectedIncompleteSource) throw new Error(INTERNAL_ERROR);
 
-        const source = {
-          ...selectedIncompleteSource,
-          type: type as SourceType,
-          name,
-        };
-        message = getMessage(Message.DELETE_CONFIRM, source);
-        response = await selectInteraction.update(message);
+      const source = {
+        ...selectedIncompleteSource,
+        type: type as SourceType,
+        name,
+      };
+      message = getMessage(Message.DELETE_CONFIRM, source);
+      response = await selectInteraction.update(message);
 
-        const confirmInteraction = await response.awaitMessageComponent({
-          time: TIMEOUT,
-          componentType: ComponentType.Button,
-        });
+      const confirmInteraction = await response.awaitMessageComponent({
+        time: TIMEOUT,
+        componentType: ComponentType.Button,
+      });
 
-        if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-          await deleteSource(name, type as SourceType);
-          message = getMessage(Message.DELETE_SUCCESS, source);
-          await confirmInteraction.update(message);
-        } else this.cancel(this.interaction);
+      if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
+        await deleteSource(name, type as SourceType);
+        message = getMessage(Message.DELETE_SUCCESS, source);
+        await confirmInteraction.update(message);
+      } else this.cancel(this.interaction);
 
-        this.terminate(this.interaction.user.id);
-      }
+      this.terminate(this.interaction.user.id);
     } catch (err) {
       if (err instanceof Error) this.error(err.message);
       else if (typeof err === "string") this.error(err);
