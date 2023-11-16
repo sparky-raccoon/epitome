@@ -84,6 +84,13 @@ const getMessage = (type: Message, data?: Source | SourceList | string) => {
       )}.`;
       break;
     }
+    case Message.ADD_ALREADY_EXISTS: {
+      title += "Ajout d’une source de publications";
+      description =
+        "Il semblerait que cette source de publications soit déjà suivie :\n" +
+        formatSourceToBlockQuote(data as Source);
+      break;
+    }
     case Message.DELETE_SELECT: {
       title += "Suppression d’une source de publications suivie";
       description =

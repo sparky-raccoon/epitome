@@ -25,6 +25,46 @@ const writeFileAndClose = (
   });
 };
 
+const findDuplicateSourceWithUrl = (
+  sourceUrl: string
+): Promise<Source | null> => {
+  return new Promise<Source | null>((resolve, reject) => {
+    open(DATA_FILE_PATH, "r", (openError, fileHandler) => {
+      if (openError) {
+        if (openError.code === "ENOENT") return resolve(null);
+        else return reject(openError);
+      }
+
+      readFile(DATA_FILE_PATH, "utf8", (readError, data) => {
+        if (readError) return reject(readError);
+
+        let duplicateSource: Source | null = null;
+        const sourceList: SourceList = JSON.parse(data);
+        const sourceTypes = Object.keys(sourceList);
+        for (const sourceType of sourceTypes) {
+          const sourceByTypes = sourceList[sourceType as SourceType];
+          if (!sourceByTypes) continue;
+
+          const sourceNames = Object.keys(sourceByTypes);
+          for (const sourceName of sourceNames) {
+            const sourceTrackingData = sourceByTypes[sourceName];
+            if (sourceTrackingData.url === sourceUrl)
+              duplicateSource = {
+                type: sourceType as SourceType,
+                name: sourceName,
+                ...sourceTrackingData,
+              };
+          }
+        }
+
+        close(fileHandler, () => {
+          return resolve(duplicateSource);
+        });
+      });
+    });
+  });
+};
+
 const addSource = (source: Source): Promise<void> => {
   const { type, name, ...otherSourceData } = source;
   const sourceTrackingData: SourceTrackingData = {
@@ -50,11 +90,11 @@ const addSource = (source: Source): Promise<void> => {
         readFile(DATA_FILE_PATH, "utf8", (readError, data) => {
           if (readError) return reject(readError);
 
-          const parsedData = JSON.parse(data);
+          const sourceList = JSON.parse(data);
           writeFileAndClose(fileHandler, {
-            ...parsedData,
+            ...sourceList,
             [type]: {
-              ...parsedData[type],
+              ...sourceList[type],
               [name]: sourceTrackingData,
             },
           })
@@ -110,19 +150,13 @@ const listSources = async (): Promise<SourceList> => {
       }
 
       readFile(DATA_FILE_PATH, "utf8", (readError, data) => {
-        const returnResult = () => {
+        close(fileHandler, () => {
           if (readError) return reject(readError);
           return resolve(JSON.parse(data));
-        };
-
-        if (fileHandler) {
-          close(fileHandler, () => {
-            returnResult();
-          });
-        } else returnResult();
+        });
       });
     });
   });
 };
 
-export { addSource, deleteSource, listSources };
+export { addSource, deleteSource, listSources, findDuplicateSourceWithUrl };

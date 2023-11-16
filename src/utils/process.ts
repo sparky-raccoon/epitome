@@ -6,7 +6,12 @@ import {
   INTERNAL_ERROR,
   BUTTON_CONFIRM_ID,
 } from "@/constants";
-import { addSource, deleteSource, listSources } from "@/utils/source";
+import {
+  addSource,
+  deleteSource,
+  listSources,
+  findDuplicateSourceWithUrl,
+} from "@/utils/source";
 import { getMessage } from "@/utils/messages";
 import { Source } from "@/types";
 
@@ -45,6 +50,14 @@ class Process {
       const type = SourceType.RSS;
       const source: Source = { name, url, type };
 
+      const duplicateSource = await findDuplicateSourceWithUrl(url);
+      if (duplicateSource) {
+        const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicateSource);
+        await this.interaction.reply(message);
+        this.terminate(this.interaction.user.id);
+        return;
+      }
+
       let message = getMessage(Message.ADD_CONFIRM, source);
       const response = await this.interaction.reply(message);
       const confirmInteraction = await response.awaitMessageComponent({
@@ -54,7 +67,7 @@ class Process {
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
         await addSource(source);
-        message = getMessage(Message.ADD_SUCCESS);
+        message = getMessage(Message.ADD_SUCCESS, source);
         await confirmInteraction.update(message);
       } else this.cancel(this.interaction);
 

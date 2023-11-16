@@ -12,6 +12,7 @@ enum Message {
   SOURCE_UPDATE = "source_update",
   ADD_CONFIRM = "add_confirm",
   ADD_SUCCESS = "add_success",
+  ADD_ALREADY_EXISTS = "add_already_exists",
   DELETE_SELECT = "delete_select",
   DELETE_CONFIRM = "delete_confirm",
   DELETE_SUCCESS = "delete_success",
