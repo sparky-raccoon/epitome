@@ -6,8 +6,9 @@ import {
   INTERNAL_ERROR,
   BUTTON_CONFIRM_ID,
 } from "@/constants";
-import { deleteSource, listSources } from "@/utils/source";
+import { addSource, deleteSource, listSources } from "@/utils/source";
 import { getMessage } from "@/utils/messages";
+import { Source } from "@/types";
 
 const TIMEOUT = 60000;
 
@@ -37,9 +38,27 @@ class Process {
 
   async add() {
     try {
+      const name = this.interaction.options.getString("name");
       const url = this.interaction.options.getString("url");
-      if (!url) throw new Error(INTERNAL_ERROR);
-      await this.interaction.reply("En cours de développement...");
+      if (!name || !url) throw new Error(INTERNAL_ERROR);
+
+      const type = SourceType.RSS;
+      const source: Source = { name, url, type };
+
+      let message = getMessage(Message.ADD_CONFIRM, source);
+      const response = await this.interaction.reply(message);
+      const confirmInteraction = await response.awaitMessageComponent({
+        time: TIMEOUT,
+        componentType: ComponentType.Button,
+      });
+
+      if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
+        await addSource(source);
+        message = getMessage(Message.ADD_SUCCESS);
+        await confirmInteraction.update(message);
+      } else this.cancel(this.interaction);
+
+      this.terminate(this.interaction.user.id);
     } catch (err) {
       if (err instanceof Error) this.error(err.message);
       else if (typeof err === "string") this.error(err);

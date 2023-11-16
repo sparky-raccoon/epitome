@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "command": "tsx src/deploy-commands.ts",
+    "command": "tsx src/commands.ts",
     "prepare": "husky install"
   },
   "repository": {

@@ -13,6 +13,12 @@ if (CLIENT_ID && GUILD_ID && TOKEN) {
       .setDescription("Suivre une nouvelle source de publications.")
       .addStringOption((option) =>
         option
+          .setName("name")
+          .setDescription("Nom de la source à ajouter")
+          .setRequired(true)
+      )
+      .addStringOption((option) =>
+        option
           .setName("url")
           .setDescription("Url de la source à ajouter")
           .setRequired(true)
