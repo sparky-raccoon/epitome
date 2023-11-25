@@ -34,24 +34,24 @@ const getMessage = (type: Message, data?: Source | SourceList | string) => {
     case Message.HELP: {
       title += "Ici Epitome";
       description =
-        "Je suis un.e bot qui t’aidera à rester à jour vis à vis de sources" +
-        "d’informations telles que les journaux en ligne, les blogs et les réseaux sociaux." +
+        "Je suis un.e bot qui t’aidera à rester à jour vis à vis de sources " +
+        "d’information telles que des journaux, des blogs et certains réseaux sociaux à partir de leurs flux RSS. " +
         "Il suffit de me dire quoi suivre, et je te retournerai les dernières publications " +
-        "dans le canal Discord où j’aurai été configuré.e.\n" +
+        "dans le canal Discord où j’aurai été configuré.e.\n\n" +
         "Voici la liste des commandes auxquelles je réponds :\n" +
         `▪︎ ${bold(
-          "/add <url>"
-        )} pour suivre une nouvelle source de publications\n` +
+          "/add <name> <url>"
+        )} - pour suivre une nouvelle source de publications.\n` +
         `▪︎ ${bold(
           "/delete"
-        )} - pour supprimer une source de publications suivie\n` +
+        )} - pour supprimer une source de publications suivie.\n` +
         `▪︎ ${bold(
           "/cancel"
-        )} - pour annuler une procédure d’ajout ou de suppression en cours\n` +
-        `▪︎ ${bold("/list")} - pour lister l’ensemble des sources suivies\n` +
+        )} - pour annuler une procédure d’ajout ou de suppression en cours.\n` +
+        `▪︎ ${bold("/list")} - pour lister l’ensemble des sources suivies.\n` +
         `▪︎ ${bold(
           "/help"
-        )} - pour te rappeler qui je suis, et ce que je sais faire`;
+        )} - pour te rappeler qui je suis, et ce que je sais faire.`;
       break;
     }
     case Message.SOURCE_UPDATE: {

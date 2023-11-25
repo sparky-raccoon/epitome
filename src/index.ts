@@ -20,27 +20,31 @@ const cleanup = (userId: string) => delete flows[userId];
 client.on("interactionCreate", async (interaction) => {
   const userId = interaction.user.id;
   if (interaction.isChatInputCommand()) {
-    if (!flows[userId]) {
-      if (interaction.commandName !== Command.CANCEL) {
-        flows[userId] = new Process(interaction, cleanup);
-      } else {
-        await interaction.reply(
-          getMessage(
-            Message.ERROR,
-            "Il n'y a aucune procédure dont tu serais l'initiateur.ice à annuler."
-          )
-        );
-      }
+    if (interaction.commandName === Command.HELP) {
+      await interaction.reply(getMessage(Message.HELP));
     } else {
-      if (interaction.commandName !== Command.CANCEL) {
-        await interaction.reply(
-          getMessage(
-            Message.ERROR,
-            "Tu as déjà une procédure en cours. Tu peux l'annuler avec la commande `/cancel`."
-          )
-        );
+      if (!flows[userId]) {
+        if (interaction.commandName !== Command.CANCEL) {
+          flows[userId] = new Process(interaction, cleanup);
+        } else {
+          await interaction.reply(
+            getMessage(
+              Message.ERROR,
+              "Il n'y a aucune procédure dont tu serais l'initiateur.ice à annuler."
+            )
+          );
+        }
       } else {
-        flows[userId].cancel(interaction);
+        if (interaction.commandName !== Command.CANCEL) {
+          await interaction.reply(
+            getMessage(
+              Message.ERROR,
+              "Tu as déjà une procédure en cours. Tu peux l'annuler avec la commande `/cancel`."
+            )
+          );
+        } else {
+          flows[userId].cancel(interaction);
+        }
       }
     }
   }
