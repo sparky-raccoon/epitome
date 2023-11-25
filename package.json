@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "command": "tsx src/commands.ts",
+    "build": "rm -rf dist && tsc && tsc-alias",
+    "start": "pm2 start dist/index.js --name epitome",
+    "deploy-commands": "tsx src/deploy/commands.ts",
     "prepare": "husky install"
   },
   "repository": {
@@ -22,20 +24,21 @@
     "axios": "^0.27.2",
     "discord.js": "^14.14.0",
     "dotenv": "^16.0.0",
-    "rss-parser": "^3.12.0"
+    "rss-parser": "^3.12.0",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.23",
-    "@typescript-eslint/eslint-plugin": "^5.17.0",
-    "@typescript-eslint/parser": "^5.17.0",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
     "eslint": "^8.12.0",
     "eslint-config-prettier": "^8.5.0",
     "husky": ">=6",
     "lint-staged": ">=10",
     "prettier": "^2.6.2",
-    "tsconfig-paths": "^4.2.0",
+    "tsc-alias": "^1.8.8",
     "tsx": "^4.1.2",
-    "typescript": "^4.6.3"
+    "typescript": "5"
   },
   "lint-staged": {
     "*.ts": "eslint --cache --fix",

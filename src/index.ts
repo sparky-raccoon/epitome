@@ -1,53 +1,23 @@
-import dotenv from "dotenv";
-import { Client, GatewayIntentBits } from "discord.js";
-import { Command, Message } from "@/constants";
-import { getMessage } from "@/utils/messages";
-import { Process } from "@/utils/process";
+import * as dotenv from "dotenv";
+import initDiscordClient from "@/client";
+import logger from "@/utils/logger";
 
 dotenv.config();
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
-});
+const handleShutDown = () => {
+  logger.info("\nGracefully shutting down from SIGINT (Ctrl-C) or SIGTERM");
+  process.exit(0);
+};
 
-client.on("ready", () => {
-  console.log(`Logged in as ${client.user?.tag}`);
-});
+type ErrorType = "uncaughtException" | "unhandledRejection";
+const handleError = (type: ErrorType, err: Error) => {
+  logger.error(`${type}: ${err.message}`);
+  process.exit(1);
+};
 
-const flows: { [userId: string]: Process } = {};
-const cleanup = (userId: string) => delete flows[userId];
+process.on("SIGINT", handleShutDown);
+process.on("SIGTERM", handleShutDown);
+process.on("uncaughtException", (err: Error) => handleError("uncaughtException", err));
+process.on("unhandledRejection", (err: Error) => handleError("unhandledRejection", err));
 
-client.on("interactionCreate", async (interaction) => {
-  const userId = interaction.user.id;
-  if (interaction.isChatInputCommand()) {
-    if (interaction.commandName === Command.HELP) {
-      await interaction.reply(getMessage(Message.HELP));
-    } else {
-      if (!flows[userId]) {
-        if (interaction.commandName !== Command.CANCEL) {
-          flows[userId] = new Process(interaction, cleanup);
-        } else {
-          await interaction.reply(
-            getMessage(
-              Message.ERROR,
-              "Il n'y a aucune procédure dont tu serais l'initiateur.ice à annuler."
-            )
-          );
-        }
-      } else {
-        if (interaction.commandName !== Command.CANCEL) {
-          await interaction.reply(
-            getMessage(
-              Message.ERROR,
-              "Tu as déjà une procédure en cours. Tu peux l'annuler avec la commande `/cancel`."
-            )
-          );
-        } else {
-          flows[userId].cancel(interaction);
-        }
-      }
-    }
-  }
-});
-
-client.login(process.env.TOKEN);
+initDiscordClient();

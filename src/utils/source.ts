@@ -1,14 +1,11 @@
 import { open, close, readFile, writeFile } from "fs";
-import path from "path";
+import * as path from "path";
 import { Source, SourceList, SourceTrackingData } from "@/types";
 import { SourceType } from "@/constants";
 
 const DATA_FILE_PATH = path.resolve(__dirname, "../sources.json");
 
-const writeFileAndClose = (
-  fileHandler: number | undefined,
-  data: SourceList
-): Promise<void> => {
+const writeFileAndClose = (fileHandler: number | undefined, data: SourceList): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
     writeFile(DATA_FILE_PATH, JSON.stringify(data, null, 2), (writeError) => {
       const returnResult = () => {
@@ -25,9 +22,7 @@ const writeFileAndClose = (
   });
 };
 
-const findDuplicateSourceWithUrl = (
-  sourceUrl: string
-): Promise<Source | null> => {
+const findDuplicateSourceWithUrl = (sourceUrl: string): Promise<Source | null> => {
   return new Promise<Source | null>((resolve, reject) => {
     open(DATA_FILE_PATH, "r", (openError, fileHandler) => {
       if (openError) {
@@ -110,10 +105,7 @@ const addSource = (source: Source): Promise<void> => {
   });
 };
 
-const deleteSource = (
-  sourceName: string,
-  sourceType: SourceType
-): Promise<void> => {
+const deleteSource = (sourceName: string, sourceType: SourceType): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
     open(DATA_FILE_PATH, "r", (openError, fileHandler) => {
       if (openError) return reject(openError);
@@ -124,10 +116,8 @@ const deleteSource = (
         const parsedData = JSON.parse(data);
         if (Object.keys(parsedData[sourceType]).includes(sourceName)) {
           delete parsedData[sourceType][sourceName];
-          if (Object.keys(parsedData[sourceType]).length === 0)
-            delete parsedData[sourceType];
-        } else
-          return reject("Cette source de publications a déjà été supprimée.");
+          if (Object.keys(parsedData[sourceType]).length === 0) delete parsedData[sourceType];
+        } else return reject("Cette source de publications a déjà été supprimée.");
 
         writeFileAndClose(fileHandler, parsedData)
           .then(() => {
