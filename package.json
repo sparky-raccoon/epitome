@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "rm -rf dist && tsc && tsc-alias",
     "start": "pm2 start dist/index.js --name epitome",
-    "deploy-commands": "tsx src/deploy/commands.ts",
+    "stop": "pm2 stop epitome && pm2 delete epitome",
     "prepare": "husky install"
   },
   "repository": {
