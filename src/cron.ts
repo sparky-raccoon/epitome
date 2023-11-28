@@ -7,7 +7,7 @@ import { ChannelType, Client } from "discord.js";
 import { Message, SourceType } from "@/constants";
 import { getMessage } from "@/utils/messages";
 
-const FILTER_KEYWORDS = ["féminisme", "féministe"];
+const FILTER_KEYWORDS = ["féminisme", "féministe", "féminicide", "femme"];
 
 const parseRssFeeds = async (): Promise<Publication[]> => {
   logger.info("Parsing RSS feeds");
@@ -39,29 +39,28 @@ const parseRssFeeds = async (): Promise<Publication[]> => {
             const { pubDate, title, link, contentSnippet, creator: author } = item;
             if (!pubDate || !title || !link || !contentSnippet) continue;
 
-            if (
-              !FILTER_KEYWORDS.some(
-                (keyword) =>
-                  title.toLowerCase().includes(keyword) ||
-                  contentSnippet.toLowerCase().includes(keyword)
-              )
-            )
-              continue;
-
             const pubDateMs = new Date(pubDate).getTime();
             if (lastParsedMs < pubDateMs) {
-              shouldTimestampsBeUpdated = true;
+              if (!shouldTimestampsBeUpdated) shouldTimestampsBeUpdated = true;
               rssSource.timestamp = pubDateMs.toString();
 
-              publications.push({
-                type: SourceType.RSS,
-                name: rssSourceName,
-                title,
-                link,
-                contentSnippet,
-                date: new Date(pubDateMs).toLocaleString("fr-FR"),
-                author,
-              });
+              if (
+                FILTER_KEYWORDS.some(
+                  (keyword) =>
+                    title.toLowerCase().includes(keyword) ||
+                    contentSnippet.toLowerCase().includes(keyword)
+                )
+              ) {
+                publications.push({
+                  type: SourceType.RSS,
+                  name: rssSourceName,
+                  title,
+                  link,
+                  contentSnippet,
+                  date: new Date(pubDateMs).toLocaleString("fr-FR"),
+                  author,
+                });
+              }
             }
           }
         } else logger.error(`Error while parsing RSS source ${rssSourceName}`);
