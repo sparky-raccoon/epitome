@@ -1,7 +1,7 @@
-import { ColorResolvable, EmbedBuilder, APIEmbedField, bold } from "discord.js";
+import { ColorResolvable, EmbedBuilder, bold } from "discord.js";
 import { Message, SourceType } from "@/constants";
 import { Publication, Source, SourceList } from "@/types";
-import { formatSourceListToEmbedField, formatSourceToBlockQuote } from "@/utils/formatters";
+import { formatSourceListToDescription, formatSourceToBlockQuote } from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
 import { selectSavedSourcesMenu } from "@/components/select-menu";
 
@@ -22,7 +22,6 @@ const getMessage = (type: Message, data?: Source | SourceList | string | Publica
   let color: ColorResolvable = "#ffffff";
   let title = "✸ ";
   let description = "";
-  let fields: APIEmbedField[] | [APIEmbedField[]] = [];
   const imageUrl = "";
   let component;
 
@@ -57,7 +56,7 @@ const getMessage = (type: Message, data?: Source | SourceList | string | Publica
       title += "Liste des sources de publications suivies";
       if (Object.keys(data as SourceList).length === 0)
         description = "Aucune source de publications n'a été configurée.";
-      else fields = formatSourceListToEmbedField(data as SourceList);
+      else description = formatSourceListToDescription(data as SourceList);
       break;
     }
     case Message.ADD_CONFIRM: {
@@ -121,7 +120,6 @@ const getMessage = (type: Message, data?: Source | SourceList | string | Publica
   const embed: EmbedBuilder = new EmbedBuilder().setColor(color).setTitle(title);
 
   if (description) embed.setDescription(description);
-  if (fields.length > 0) embed.setFields(fields);
   if (imageUrl) embed.setImage(imageUrl);
 
   return component

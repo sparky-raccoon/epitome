@@ -3,14 +3,12 @@ import { Command } from "@/constants";
 import logger from "@/utils/logger";
 
 const deployCommands = (clientId: string, token: string): Promise<void> => {
+  logger.info("Deploying application commands");
   return new Promise((resolve, reject) => {
     const commands = [
       new SlashCommandBuilder()
         .setName(Command.ADD)
         .setDescription("Suivre une nouvelle source de publications.")
-        .addStringOption((option) =>
-          option.setName("name").setDescription("Nom de la source à ajouter").setRequired(true)
-        )
         .addStringOption((option) =>
           option.setName("url").setDescription("Url de la source à ajouter").setRequired(true)
         ),

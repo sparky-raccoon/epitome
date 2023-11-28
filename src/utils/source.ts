@@ -1,9 +1,10 @@
 import { open, close, readFile, writeFile } from "fs";
 import * as path from "path";
+import Parser from "rss-parser";
 import { Source, SourceList, SourceTrackingData } from "@/types";
 import { SourceType } from "@/constants";
 
-const DATA_FILE_PATH = path.resolve(__dirname, "../sources.json");
+const DATA_FILE_PATH = path.resolve(__dirname, "../../sources.json");
 
 const writeFileAndClose = (fileHandler: number | undefined, data: SourceList): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
@@ -64,7 +65,7 @@ const addSource = (source: Source): Promise<void> => {
   const { type, name, ...otherSourceData } = source;
   const sourceTrackingData: SourceTrackingData = {
     ...otherSourceData,
-    timestamp: Date.now().toString(),
+    timestamp: "0",
   };
 
   return new Promise<void>((resolve, reject) => {
@@ -165,4 +166,17 @@ const replaceSourceList = (sourceList: SourceList): Promise<void> => {
   });
 };
 
-export { addSource, deleteSource, listSources, findDuplicateSourceWithUrl, replaceSourceList };
+const getRssNameFromUrl = async (url: string): Promise<string> => {
+  const parser = new Parser();
+  const feed = await parser.parseURL(url);
+  return feed.title || "Undefined";
+};
+
+export {
+  addSource,
+  deleteSource,
+  listSources,
+  findDuplicateSourceWithUrl,
+  replaceSourceList,
+  getRssNameFromUrl,
+};

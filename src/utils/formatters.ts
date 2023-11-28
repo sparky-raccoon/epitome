@@ -1,4 +1,4 @@
-import { APIEmbedField, blockQuote } from "discord.js";
+import { blockQuote } from "discord.js";
 import { SourceType } from "@/constants";
 import { Source, SourceList } from "@/types";
 
@@ -19,14 +19,12 @@ const formatSourceToBlockQuote = (source: Source): `>>> ${string}` => {
   const { type, name, url } = source;
 
   return blockQuote(
-    `Type : ${formatSourceTypeToReadable(type)}\n` +
-      `Chaîne : ${name}\n` +
-      `Url : ${url}`
+    `Type : ${formatSourceTypeToReadable(type)}\n` + `Chaîne : ${name}\n` + `Url : ${url}`
   );
 };
 
-const formatSourceListToEmbedField = (list: SourceList): APIEmbedField[] => {
-  return Object.keys(list).reduce((acc: APIEmbedField[], type) => {
+const formatSourceListToDescription = (list: SourceList): string => {
+  const fields = Object.keys(list).reduce((acc: string, type) => {
     const typeName = formatSourceTypeToReadable(type as SourceType);
     const sourcesByType = list[type as SourceType];
 
@@ -39,22 +37,20 @@ const formatSourceListToEmbedField = (list: SourceList): APIEmbedField[] => {
           const source = sourcesByType[sourceName];
           const { url: sourceUrl } = source;
 
-          sourceNameAndUrls.push(`${sourceName} (${sourceUrl})`);
+          sourceNameAndUrls.push(`- ${sourceName} (${sourceUrl})`);
         }
 
-        return [
-          ...acc,
-          { name: typeName, value: sourceNameAndUrls.join("\n") },
-        ];
+        return acc + `**${typeName}**\n` + sourceNameAndUrls.join("\n") + "\n\n";
       } else return acc;
     } else return acc;
-  }, []);
+  }, "");
+
+  console.log(fields);
+  return fields;
 };
 
-const formatYouTubeChannelToSource = (
-  channelData: any,
-  url: string
-): Source => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const formatYouTubeChannelToSource = (channelData: any, url: string): Source => {
   // FIXME: youtube channel data should be typed.
   // eslint-disable-next-line no-unsafe-optional-chaining
   const { channelId: id, title: name } = channelData?.snippet;
@@ -67,10 +63,8 @@ const formatYouTubeChannelToSource = (
   };
 };
 
-const formatTwitterUserFeedToSource = (
-  twitterData: any,
-  url: string
-): Source => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const formatTwitterUserFeedToSource = (twitterData: any, url: string): Source => {
   // FIXME: youtube channel data should be typed.
   const { name } = twitterData;
 
@@ -84,7 +78,7 @@ const formatTwitterUserFeedToSource = (
 export {
   formatSourceTypeToReadable,
   formatSourceToBlockQuote,
-  formatSourceListToEmbedField,
+  formatSourceListToDescription,
   formatYouTubeChannelToSource,
   formatTwitterUserFeedToSource,
 };

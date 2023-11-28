@@ -1,19 +1,15 @@
 import { ChatInputCommandInteraction, ComponentType } from "discord.js";
-import {
-  Command,
-  Message,
-  SourceType,
-  INTERNAL_ERROR,
-  BUTTON_CONFIRM_ID,
-} from "@/constants";
+import { Command, Message, SourceType, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/constants";
 import {
   addSource,
   deleteSource,
   listSources,
   findDuplicateSourceWithUrl,
+  getRssNameFromUrl,
 } from "@/utils/source";
 import { getMessage } from "@/utils/messages";
 import { Source } from "@/types";
+import logger from "./logger";
 
 const TIMEOUT = 60000;
 
@@ -21,10 +17,7 @@ class Process {
   interaction: ChatInputCommandInteraction;
   terminate: (userId: string) => void;
 
-  constructor(
-    interaction: ChatInputCommandInteraction,
-    terminate: (userId: string) => void
-  ) {
+  constructor(interaction: ChatInputCommandInteraction, terminate: (userId: string) => void) {
     this.interaction = interaction;
     this.terminate = terminate;
 
@@ -43,23 +36,25 @@ class Process {
 
   async add() {
     try {
-      const name = this.interaction.options.getString("name");
+      await this.interaction.deferReply();
+
       const url = this.interaction.options.getString("url");
-      if (!name || !url) throw new Error(INTERNAL_ERROR);
+      if (!url) throw new Error(INTERNAL_ERROR);
 
       const type = SourceType.RSS;
+      const name = await getRssNameFromUrl(url);
       const source: Source = { name, url, type };
 
       const duplicateSource = await findDuplicateSourceWithUrl(url);
       if (duplicateSource) {
         const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicateSource);
-        await this.interaction.reply(message);
+        await this.interaction.editReply(message);
         this.terminate(this.interaction.user.id);
         return;
       }
 
       let message = getMessage(Message.ADD_CONFIRM, source);
-      const response = await this.interaction.reply(message);
+      const response = await this.interaction.editReply(message);
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
         componentType: ComponentType.Button,
@@ -80,18 +75,20 @@ class Process {
 
   async delete() {
     try {
+      await this.interaction.deferReply();
+
       let message;
       const sourceList = await listSources();
 
       if (Object.keys(sourceList).length === 0) {
         message = getMessage(Message.DELETE_NO_SAVED_SOURCES);
-        await this.interaction.reply(message);
+        await this.interaction.editReply(message);
         this.terminate(this.interaction.user.id);
         return;
       }
 
       message = getMessage(Message.DELETE_SELECT, sourceList);
-      let response = await this.interaction.reply(message);
+      let response = await this.interaction.editReply(message);
       const selectInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
         componentType: ComponentType.StringSelect,
@@ -130,9 +127,11 @@ class Process {
 
   async list() {
     try {
+      await this.interaction.deferReply();
+
       const sourceList = await listSources();
       const message = getMessage(Message.LIST, sourceList);
-      this.interaction.reply(message);
+      this.interaction.editReply(message);
 
       this.terminate(this.interaction.user.id);
     } catch (err) {
@@ -158,6 +157,7 @@ class Process {
   }
 
   error(err: string) {
+    logger.error(err);
     const message = getMessage(Message.ERROR, err);
     this.interaction.editReply(message);
     this.terminate(this.interaction.user.id);
