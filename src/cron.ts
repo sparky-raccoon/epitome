@@ -10,6 +10,7 @@ import { getMessage } from "@/utils/messages";
 const FILTER_KEYWORDS = ["féminisme", "féministe"];
 
 const parseRssFeeds = async (): Promise<Publication[]> => {
+  logger.info("Parsing RSS feeds");
   const sourceList = await listSources();
   const rssSources = sourceList.rss;
   const publications: Publication[] = [];
@@ -76,8 +77,7 @@ const parseRssFeeds = async (): Promise<Publication[]> => {
 
 const initCronJob = async (client: Client) => {
   logger.info("Initializing cron job");
-
-  schedule("0 9-15/3 * * *", async () => {
+  const checkAndPost = async () => {
     const testChannel = client.channels.cache.get("1173722193990000750");
     if (testChannel && testChannel.type === ChannelType.GuildText) {
       const publications = await parseRssFeeds();
@@ -85,7 +85,10 @@ const initCronJob = async (client: Client) => {
         testChannel.send(getMessage(Message.POST, publication));
       });
     }
-  });
+  };
+
+  checkAndPost();
+  schedule("0 */4 * * *", () => checkAndPost());
 };
 
 export default initCronJob;
