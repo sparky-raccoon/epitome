@@ -49,36 +49,4 @@ const formatSourceListToDescription = (list: SourceList): string => {
   return fields;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const formatYouTubeChannelToSource = (channelData: any, url: string): Source => {
-  // FIXME: youtube channel data should be typed.
-  // eslint-disable-next-line no-unsafe-optional-chaining
-  const { channelId: id, title: name } = channelData?.snippet;
-
-  return {
-    type: SourceType.YOUTUBE,
-    name,
-    url,
-    feed: `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`,
-  };
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const formatTwitterUserFeedToSource = (twitterData: any, url: string): Source => {
-  // FIXME: youtube channel data should be typed.
-  const { name } = twitterData;
-
-  return {
-    type: SourceType.TWITTER,
-    name,
-    url,
-  };
-};
-
-export {
-  formatSourceTypeToReadable,
-  formatSourceToBlockQuote,
-  formatSourceListToDescription,
-  formatYouTubeChannelToSource,
-  formatTwitterUserFeedToSource,
-};
+export { formatSourceTypeToReadable, formatSourceToBlockQuote, formatSourceListToDescription };
