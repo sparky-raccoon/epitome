@@ -149,4 +149,20 @@ const listSources = async (): Promise<SourceList> => {
   });
 };
 
-export { addSource, deleteSource, listSources, findDuplicateSourceWithUrl };
+const replaceSourceList = (sourceList: SourceList): Promise<void> => {
+  return new Promise<void>((resolve, reject) => {
+    open(DATA_FILE_PATH, "r", (openError, fileHandler) => {
+      if (openError) return reject(openError);
+
+      writeFileAndClose(fileHandler, sourceList)
+        .then(() => {
+          return resolve();
+        })
+        .catch((e) => {
+          return reject(e);
+        });
+    });
+  });
+};
+
+export { addSource, deleteSource, listSources, findDuplicateSourceWithUrl, replaceSourceList };

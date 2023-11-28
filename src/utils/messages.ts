@@ -1,11 +1,7 @@
 import { ColorResolvable, EmbedBuilder, APIEmbedField, bold } from "discord.js";
 import { Message, SourceType } from "@/constants";
-import { Source, SourceList } from "@/types";
-import {
-  formatSourceListToEmbedField,
-  formatSourceTypeToReadable,
-  formatSourceToBlockQuote,
-} from "@/utils/formatters";
+import { Publication, Source, SourceList } from "@/types";
+import { formatSourceListToEmbedField, formatSourceToBlockQuote } from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
 import { selectSavedSourcesMenu } from "@/components/select-menu";
 
@@ -22,7 +18,7 @@ const getColorForSourceType = (sourceType: SourceType): ColorResolvable => {
   }
 };
 
-const getMessage = (type: Message, data?: Source | SourceList | string) => {
+const getMessage = (type: Message, data?: Source | SourceList | string | Publication) => {
   let color: ColorResolvable = "#ffffff";
   let title = "✸ ";
   let description = "";
@@ -39,27 +35,22 @@ const getMessage = (type: Message, data?: Source | SourceList | string) => {
         "Il suffit de me dire quoi suivre, et je te retournerai les dernières publications " +
         "dans le canal Discord où j’aurai été configuré.e.\n\n" +
         "Voici la liste des commandes auxquelles je réponds :\n" +
-        `▪︎ ${bold(
-          "/add <name> <url>"
-        )} - pour suivre une nouvelle source de publications.\n` +
-        `▪︎ ${bold(
-          "/delete"
-        )} - pour supprimer une source de publications suivie.\n` +
-        `▪︎ ${bold(
-          "/cancel"
-        )} - pour annuler une procédure d’ajout ou de suppression en cours.\n` +
+        `▪︎ ${bold("/add <name> <url>")} - pour suivre une nouvelle source de publications.\n` +
+        `▪︎ ${bold("/delete")} - pour supprimer une source de publications suivie.\n` +
+        `▪︎ ${bold("/cancel")} - pour annuler une procédure d’ajout ou de suppression en cours.\n` +
         `▪︎ ${bold("/list")} - pour lister l’ensemble des sources suivies.\n` +
-        `▪︎ ${bold(
-          "/help"
-        )} - pour te rappeler qui je suis, et ce que je sais faire.`;
+        `▪︎ ${bold("/help")} - pour te rappeler qui je suis, et ce que je sais faire.`;
       break;
     }
-    case Message.SOURCE_UPDATE: {
-      const { type: sourceType, name: sourceName } = data as Source;
-      title += `${formatSourceTypeToReadable(
-        sourceType
-      )} Nouvelle publication de ${sourceName}`;
-      color = getColorForSourceType(sourceType);
+    case Message.POST: {
+      const { type, name, title: pTitle, link, contentSnippet, author, date } = data as Publication;
+      title += `[${name}] ${pTitle}`;
+      description =
+        `${contentSnippet}\n\n` +
+        `Date de publication : ${date}\n` +
+        (author ? `Auteur.rice : ${author}\n` : "") +
+        `Source : ${link}`;
+      color = getColorForSourceType(type);
       break;
     }
     case Message.LIST: {
@@ -127,9 +118,7 @@ const getMessage = (type: Message, data?: Source | SourceList | string) => {
     }
   }
 
-  const embed: EmbedBuilder = new EmbedBuilder()
-    .setColor(color)
-    .setTitle(title);
+  const embed: EmbedBuilder = new EmbedBuilder().setColor(color).setTitle(title);
 
   if (description) embed.setDescription(description);
   if (fields.length > 0) embed.setFields(fields);

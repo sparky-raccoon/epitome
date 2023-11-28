@@ -4,6 +4,7 @@ import { getMessage } from "@/utils/messages";
 import { Process } from "@/utils/process";
 import logger from "@/utils/logger";
 import deployCommands from "@/deploy/commands";
+import initCronJob from "@/cron";
 
 const initDiscordClient = (clientId?: string, token?: string): Client => {
   if (!token || !clientId) throw new Error("Missing environment variables");
@@ -12,6 +13,8 @@ const initDiscordClient = (clientId?: string, token?: string): Client => {
   client.once(Events.ClientReady, async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
     await deployCommands(clientId, token);
+
+    initCronJob(client);
 
     client.on(Events.GuildCreate, async (guild) => {
       logger.info(`Joined new guild: ${guild.name} (${guild.id})`);

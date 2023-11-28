@@ -17,4 +17,14 @@ interface Source extends Omit<SourceTrackingData, "timestamp"> {
   name: string;
 }
 
-export { SourceList, Source, SourceTrackingData };
+interface Publication {
+  type: SourceType;
+  name: string;
+  title: string;
+  link: string;
+  contentSnippet: string;
+  date: string;
+  author?: string;
+}
+
+export { SourceList, Source, SourceTrackingData, Publication };

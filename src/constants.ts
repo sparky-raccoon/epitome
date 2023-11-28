@@ -9,7 +9,7 @@ enum Command {
 enum Message {
   HELP = "help",
   LIST = "list",
-  SOURCE_UPDATE = "source_update",
+  POST = "post",
   ADD_CONFIRM = "add_confirm",
   ADD_SUCCESS = "add_success",
   ADD_ALREADY_EXISTS = "add_already_exists",
@@ -33,11 +33,4 @@ const INTERNAL_ERROR = "Erreur interne.";
 const BUTTON_CONFIRM_ID = "confirm-yes-button";
 const BUTTON_CANCEL_ID = "confirm-no-button";
 
-export {
-  Command,
-  Message,
-  SourceType,
-  INTERNAL_ERROR,
-  BUTTON_CONFIRM_ID,
-  BUTTON_CANCEL_ID,
-};
+export { Command, Message, SourceType, INTERNAL_ERROR, BUTTON_CONFIRM_ID, BUTTON_CANCEL_ID };
