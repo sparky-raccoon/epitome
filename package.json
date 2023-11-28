@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "rm -rf dist && tsc && tsc-alias",
-    "start": "pm2 start dist/index.js --name epitome",
+    "start": "pm2 start -f dist/index.js --name epitome",
     "stop": "pm2 stop epitome && pm2 delete epitome",
+    "deploy": "npm run build && npm run start && pm2 save",
     "prepare": "husky install"
   },
   "repository": {
