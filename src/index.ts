@@ -4,7 +4,7 @@ import logger from "@/utils/logger";
 
 dotenv.config();
 const { TOKEN: token, CLIENT_ID: clientId } = process.env;
-const client = initDiscordClient(clientId, token);
+const client = initDiscordClient(clientId, token, false);
 
 const cleanup = () => {
   logger.info("Destroying Discord client");

@@ -6,13 +6,17 @@ import logger from "@/utils/logger";
 import deployCommands from "@/deploy/commands";
 import initCronJob from "@/cron";
 
-const initDiscordClient = (clientId?: string, token?: string): Client => {
+const initDiscordClient = (
+  clientId?: string,
+  token?: string,
+  shouldDeployCommands?: boolean
+): Client => {
   if (!token || !clientId) throw new Error("Missing environment variables");
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
   client.once(Events.ClientReady, async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
-    await deployCommands(clientId, token);
+    if (shouldDeployCommands) await deployCommands(clientId, token);
 
     initCronJob(client);
 
