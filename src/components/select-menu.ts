@@ -1,6 +1,9 @@
-import { ActionRowBuilder, StringSelectMenuBuilder } from "discord.js";
+import {
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+} from "discord.js";
 import { SourceList } from "@/types";
-import { formatSourceTypeToReadable } from "@/utils/formatters";
 import { SourceType } from "@/constants";
 
 const selectSavedSourcesMenu = (
@@ -9,22 +12,21 @@ const selectSavedSourcesMenu = (
   const options = [];
 
   for (const sourceType in savedSourceList) {
-    for (const sourceName in savedSourceList[sourceType as SourceType]) {
-      options.push({
-        label: `[${formatSourceTypeToReadable(
-          sourceType as SourceType
-        )}] ${sourceName} (${
-          savedSourceList[sourceType as SourceType]?.[sourceName]?.url
-        })`,
-        value: `${sourceType}-${sourceName}`,
-      });
+    const savedSourcesByType = savedSourceList[sourceType as SourceType];
+    for (const sourceId in savedSourcesByType) {
+      const source = savedSourcesByType[sourceId];
+      const { name, url } = source;
+      options.push(
+        new StringSelectMenuOptionBuilder()
+          .setLabel(name)
+          .setValue(`${sourceType}|${sourceId}`)
+          .setDescription(url)
+      );
     }
   }
 
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-    new StringSelectMenuBuilder()
-      .setCustomId("select-saved-source")
-      .addOptions(options)
+    new StringSelectMenuBuilder().setCustomId("select-saved-source").addOptions(options)
   );
 };
 

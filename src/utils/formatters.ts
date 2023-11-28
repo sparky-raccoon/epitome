@@ -30,14 +30,14 @@ const formatSourceListToDescription = (list: SourceList): string => {
 
     if (sourcesByType) {
       const sourceNameAndUrls = [];
-      const sourceNames = Object.keys(sourcesByType);
+      const sourceIds = Object.keys(sourcesByType);
 
-      if (sourceNames.length > 0) {
-        for (const sourceName of sourceNames) {
-          const source = sourcesByType[sourceName];
-          const { url: sourceUrl } = source;
+      if (sourceIds.length > 0) {
+        for (const sourceId of sourceIds) {
+          const source = sourcesByType[sourceId];
+          const { name, url } = source;
 
-          sourceNameAndUrls.push(`- [${sourceName}](${sourceUrl})`);
+          sourceNameAndUrls.push(`- [${name}](${url})`);
         }
 
         return acc + `**${typeName}**\n` + sourceNameAndUrls.join("\n") + "\n\n";
@@ -45,7 +45,6 @@ const formatSourceListToDescription = (list: SourceList): string => {
     } else return acc;
   }, "");
 
-  console.log(fields);
   return fields;
 };
 

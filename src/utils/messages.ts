@@ -68,7 +68,7 @@ const getMessage = (type: Message, data?: Source | SourceList | string | Publica
       break;
     }
     case Message.ADD_SUCCESS: {
-      title += "Votre source a bien été ajoutée";
+      title += "Ajout de la source effective";
       description = `Vous retrouverez celle-ci parmi la liste des sources précédemment configurées avec la commande ${bold(
         "/list"
       )}.`;
@@ -97,7 +97,7 @@ const getMessage = (type: Message, data?: Source | SourceList | string | Publica
       break;
     }
     case Message.DELETE_SUCCESS: {
-      title += "Suppression de la source effective.";
+      title += "Suppression de la source effective";
       description = `Tu ne seras plus notifié.e des dernières publications associées à celle-ci. Pour retrouver la liste des sources de publication présentement configurées, appelez la commande \`/list\``;
       break;
     }
@@ -112,7 +112,7 @@ const getMessage = (type: Message, data?: Source | SourceList | string | Publica
       break;
     }
     case Message.ERROR: {
-      title += "Erreur !";
+      title += "Erreur";
       description = "Quelque chose ne tourne pas rond.\n" + (data as string);
     }
   }

@@ -41,13 +41,13 @@ const findDuplicateSourceWithUrl = (sourceUrl: string): Promise<Source | null> =
           const sourceByTypes = sourceList[sourceType as SourceType];
           if (!sourceByTypes) continue;
 
-          const sourceNames = Object.keys(sourceByTypes);
-          for (const sourceName of sourceNames) {
-            const sourceTrackingData = sourceByTypes[sourceName];
+          const sourceIds = Object.keys(sourceByTypes);
+          for (const sourceId of sourceIds) {
+            const sourceTrackingData = sourceByTypes[sourceId];
             if (sourceTrackingData.url === sourceUrl)
               duplicateSource = {
+                id: sourceId,
                 type: sourceType as SourceType,
-                name: sourceName,
                 ...sourceTrackingData,
               };
           }
@@ -62,7 +62,7 @@ const findDuplicateSourceWithUrl = (sourceUrl: string): Promise<Source | null> =
 };
 
 const addSource = (source: Source): Promise<void> => {
-  const { type, name, ...otherSourceData } = source;
+  const { id, type, ...otherSourceData } = source;
   const sourceTrackingData: SourceTrackingData = {
     ...otherSourceData,
     timestamp: "0",
@@ -73,7 +73,7 @@ const addSource = (source: Source): Promise<void> => {
       if (openError) {
         if (openError.code === "ENOENT") {
           writeFileAndClose(fileHandler, {
-            [type]: { [name]: sourceTrackingData },
+            [type]: { [id]: sourceTrackingData },
           })
             .then(() => {
               return resolve();
@@ -91,7 +91,7 @@ const addSource = (source: Source): Promise<void> => {
             ...sourceList,
             [type]: {
               ...sourceList[type],
-              [name]: sourceTrackingData,
+              [id]: sourceTrackingData,
             },
           })
             .then(() => {
@@ -106,7 +106,7 @@ const addSource = (source: Source): Promise<void> => {
   });
 };
 
-const deleteSource = (sourceName: string, sourceType: SourceType): Promise<void> => {
+const deleteSource = (sourceId: string, sourceType: SourceType): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
     open(DATA_FILE_PATH, "r", (openError, fileHandler) => {
       if (openError) return reject(openError);
@@ -115,8 +115,8 @@ const deleteSource = (sourceName: string, sourceType: SourceType): Promise<void>
         if (readError) return reject(readError);
 
         const parsedData = JSON.parse(data);
-        if (Object.keys(parsedData[sourceType]).includes(sourceName)) {
-          delete parsedData[sourceType][sourceName];
+        if (Object.keys(parsedData[sourceType]).includes(sourceId)) {
+          delete parsedData[sourceType][sourceId];
           if (Object.keys(parsedData[sourceType]).length === 0) delete parsedData[sourceType];
         } else return reject("Cette source de publications a déjà été supprimée.");
 

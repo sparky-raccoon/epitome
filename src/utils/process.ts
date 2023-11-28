@@ -1,4 +1,5 @@
-import { ChatInputCommandInteraction, ComponentType } from "discord.js";
+import { ChatInputCommandInteraction, ComponentType, Message as DiscordMessage } from "discord.js";
+import { v4 as uuidv4 } from "uuid";
 import { Command, Message, SourceType, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/constants";
 import {
   addSource,
@@ -41,10 +42,6 @@ class Process {
       const url = this.interaction.options.getString("url");
       if (!url) throw new Error(INTERNAL_ERROR);
 
-      const type = SourceType.RSS;
-      const name = await getRssNameFromUrl(url);
-      const source: Source = { name, url, type };
-
       const duplicateSource = await findDuplicateSourceWithUrl(url);
       if (duplicateSource) {
         const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicateSource);
@@ -52,6 +49,10 @@ class Process {
         this.terminate(this.interaction.user.id);
         return;
       }
+
+      const type = SourceType.RSS;
+      const name = await getRssNameFromUrl(url);
+      const source: Source = { id: uuidv4(), type, name, url };
 
       let message = getMessage(Message.ADD_CONFIRM, source);
       const response = await this.interaction.editReply(message);
@@ -88,24 +89,25 @@ class Process {
       }
 
       message = getMessage(Message.DELETE_SELECT, sourceList);
+
       let response = await this.interaction.editReply(message);
       const selectInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
         componentType: ComponentType.StringSelect,
       });
       const selectedValue = selectInteraction.values[0];
-      const [type, name] = selectedValue.split("-");
-      const selectedIncompleteSource = sourceList[type as SourceType]?.[name];
+      const [type, id] = selectedValue.split("|");
+      const selectedIncompleteSource = sourceList[type as SourceType]?.[id];
 
       if (!selectedIncompleteSource) throw new Error(INTERNAL_ERROR);
 
       const source = {
         ...selectedIncompleteSource,
+        id,
         type: type as SourceType,
-        name,
       };
       message = getMessage(Message.DELETE_CONFIRM, source);
-      response = await selectInteraction.update(message);
+      response = (await selectInteraction.update(message)) as unknown as DiscordMessage;
 
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
@@ -113,7 +115,7 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        await deleteSource(name, type as SourceType);
+        await deleteSource(id, type as SourceType);
         message = getMessage(Message.DELETE_SUCCESS, source);
         await confirmInteraction.update(message);
       } else this.cancel(this.interaction);

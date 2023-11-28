@@ -17,17 +17,16 @@ const parseRssFeeds = async (): Promise<Publication[]> => {
   let shouldTimestampsBeUpdated = false;
 
   if (rssSources) {
-    const rssSourceNames = Object.keys(rssSources);
-    if (rssSourceNames.length > 0) {
+    const rssSourceIds = Object.keys(rssSources);
+    if (rssSourceIds.length > 0) {
       const parser = new Parser();
-      const promises = rssSourceNames.map(
-        async (name) => await parser.parseURL(rssSources[name].url)
-      );
+      const promises = rssSourceIds.map(async (id) => await parser.parseURL(rssSources[id].url));
 
       const results = await Promise.allSettled(promises);
       results.forEach((result, index) => {
-        const rssSourceName = rssSourceNames[index];
-        const rssSource = rssSources[rssSourceName];
+        const rssSourceId = rssSourceIds[index];
+        const rssSource = rssSources[rssSourceId];
+        const rssSourceName = rssSource.name;
 
         if (result.status === "fulfilled") {
           logger.info(`Successfully parsed RSS source ${rssSourceName}`);
