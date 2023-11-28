@@ -37,7 +37,7 @@ const formatSourceListToDescription = (list: SourceList): string => {
           const source = sourcesByType[sourceName];
           const { url: sourceUrl } = source;
 
-          sourceNameAndUrls.push(`- ${sourceName} (${sourceUrl})`);
+          sourceNameAndUrls.push(`- [${sourceName}](${sourceUrl})`);
         }
 
         return acc + `**${typeName}**\n` + sourceNameAndUrls.join("\n") + "\n\n";
