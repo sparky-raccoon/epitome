@@ -58,6 +58,7 @@ const parseRssFeeds = async (): Promise<Publication[]> => {
                   link,
                   contentSnippet,
                   date: new Date(pubDateMs).toLocaleString("fr-FR"),
+                  dateMs: pubDateMs,
                   author,
                 });
               }
@@ -79,6 +80,7 @@ const initCronJob = async (client: Client) => {
     const testChannel = client.channels.cache.get("1173722193990000750");
     if (testChannel && testChannel.type === ChannelType.GuildText) {
       const publications = await parseRssFeeds();
+      publications.sort((a, b) => a.dateMs - b.dateMs);
       publications.forEach((publication) => {
         testChannel.send(getMessage(Message.POST, publication));
       });
