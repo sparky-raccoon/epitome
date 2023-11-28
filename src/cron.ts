@@ -36,8 +36,8 @@ const parseRssFeeds = async (): Promise<Publication[]> => {
 
           for (let i = items.length - 1; i >= 0; i--) {
             const item = items[i];
-            const { pubDate, title, link, contentSnippet, creator: author } = item;
-            if (!pubDate || !title || !link || !contentSnippet) continue;
+            const { pubDate, title, link, description, creator: author } = item;
+            if (!pubDate || !title || !link || !description) continue;
 
             const pubDateMs = new Date(pubDate).getTime();
             if (lastParsedMs < pubDateMs) {
@@ -48,7 +48,7 @@ const parseRssFeeds = async (): Promise<Publication[]> => {
                 FILTER_KEYWORDS.some(
                   (keyword) =>
                     title.toLowerCase().includes(keyword) ||
-                    contentSnippet.toLowerCase().includes(keyword)
+                    description.toLowerCase().includes(keyword)
                 )
               ) {
                 publications.push({
@@ -56,7 +56,7 @@ const parseRssFeeds = async (): Promise<Publication[]> => {
                   name: rssSourceName,
                   title,
                   link,
-                  contentSnippet,
+                  description,
                   date: new Date(pubDateMs).toLocaleString("fr-FR"),
                   dateMs: pubDateMs,
                   author,

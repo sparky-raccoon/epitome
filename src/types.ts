@@ -25,7 +25,7 @@ interface Publication {
   name: string;
   title: string;
   link: string;
-  contentSnippet: string;
+  description: string;
   date: string;
   dateMs: number;
   author?: string;

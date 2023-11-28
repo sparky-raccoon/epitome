@@ -42,10 +42,18 @@ const getMessage = (type: Message, data?: Source | SourceList | string | Publica
       break;
     }
     case Message.POST: {
-      const { type, name, title: pTitle, link, contentSnippet, author, date } = data as Publication;
+      const {
+        type,
+        name,
+        title: pTitle,
+        link,
+        description: pDescription,
+        author,
+        date,
+      } = data as Publication;
       title += `[${name}] ${pTitle}`;
       description =
-        `${contentSnippet}\n\n` +
+        `${pDescription}\n\n` +
         `Date de publication : ${date}\n` +
         (author ? `Auteur.rice : ${author}\n` : "") +
         `Source : ${link}`;
