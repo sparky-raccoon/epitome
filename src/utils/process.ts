@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, ComponentType, Message as DiscordMessage } from "discord.js";
 import { v4 as uuidv4 } from "uuid";
-import { Command, Message, SourceType, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/constants";
+import { Command, Message, SourceType, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
 import {
   addSource,
   deleteSource,
@@ -9,7 +9,7 @@ import {
   getRssNameFromUrl,
 } from "@/utils/source";
 import { getMessage } from "@/utils/messages";
-import { Source } from "@/types";
+import { Source } from "@/utils/types";
 import logger from "./logger";
 
 const TIMEOUT = 60000;

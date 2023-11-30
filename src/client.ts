@@ -1,23 +1,16 @@
 import { Client, Events, GatewayIntentBits } from "discord.js";
-import { Command, Message } from "@/constants";
+import { Command, Message } from "@/utils/constants";
 import { getMessage } from "@/utils/messages";
 import { Process } from "@/utils/process";
 import logger from "@/utils/logger";
-import deployCommands from "@/deploy/commands";
 import initCronJob from "@/cron";
 
-const initDiscordClient = (
-  clientId?: string,
-  token?: string,
-  shouldDeployCommands?: boolean
-): Client => {
+const initDiscordClient = (clientId?: string, token?: string): Client => {
   if (!token || !clientId) throw new Error("Missing environment variables");
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
   client.once(Events.ClientReady, async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
-    if (shouldDeployCommands) await deployCommands(clientId, token);
-
     initCronJob(client);
 
     client.on(Events.GuildCreate, async (guild) => {

@@ -1,6 +1,6 @@
 import { ColorResolvable, EmbedBuilder, bold } from "discord.js";
-import { Message, SourceType } from "@/constants";
-import { Publication, Source, SourceList } from "@/types";
+import { Message, SourceType } from "@/utils/constants";
+import { Publication, Source, SourceList } from "@/utils/types";
 import { formatSourceListToDescription, formatSourceToBlockQuote } from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
 import { selectSavedSourcesMenu } from "@/components/select-menu";

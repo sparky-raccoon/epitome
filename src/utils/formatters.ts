@@ -1,6 +1,6 @@
 import { blockQuote } from "discord.js";
-import { SourceType } from "@/constants";
-import { Source, SourceList } from "@/types";
+import { SourceType } from "@/utils/constants";
+import { Source, SourceList } from "@/utils/types";
 
 const formatSourceTypeToReadable = (type: SourceType): string => {
   switch (type) {

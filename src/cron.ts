@@ -2,9 +2,9 @@ import { schedule } from "node-cron";
 import Parser from "rss-parser";
 import logger from "@/utils/logger";
 import { listSources, replaceSourceList } from "@/utils/source";
-import { Publication } from "@/types";
+import { Publication } from "@/utils/types";
 import { ChannelType, Client } from "discord.js";
-import { Message, SourceType } from "@/constants";
+import { Message, SourceType } from "@/utils/constants";
 import { getMessage } from "@/utils/messages";
 
 const FILTER_KEYWORDS = ["féminisme", "féministe", "féminicide", "femme"];

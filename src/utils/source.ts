@@ -1,8 +1,8 @@
 import { open, close, readFile, writeFile } from "fs";
 import * as path from "path";
 import Parser from "rss-parser";
-import { Source, SourceList, SourceTrackingData } from "@/types";
-import { SourceType } from "@/constants";
+import { Source, SourceList, SourceTrackingData } from "@/utils/types";
+import { SourceType } from "@/utils/constants";
 
 const DATA_FILE_PATH = path.resolve(__dirname, "../../sources.json");
 

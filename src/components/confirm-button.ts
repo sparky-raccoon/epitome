@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { BUTTON_CANCEL_ID, BUTTON_CONFIRM_ID } from "@/constants";
+import { BUTTON_CANCEL_ID, BUTTON_CONFIRM_ID } from "@/utils/constants";
 
 const confirmOrCancelButton = (): ActionRowBuilder<ButtonBuilder> =>
   new ActionRowBuilder<ButtonBuilder>().addComponents(

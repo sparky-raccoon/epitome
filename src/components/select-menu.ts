@@ -3,8 +3,8 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from "discord.js";
-import { SourceList } from "@/types";
-import { SourceType } from "@/constants";
+import { SourceList } from "@/utils/types";
+import { SourceType } from "@/utils/constants";
 
 const selectSavedSourcesMenu = (
   savedSourceList: SourceList
