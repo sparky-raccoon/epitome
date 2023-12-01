@@ -4,13 +4,24 @@ import { getMessage } from "@/utils/messages";
 import { Process } from "@/utils/process";
 import logger from "@/utils/logger";
 import initCronJob from "@/cron";
+import { initDatabase } from "@/bdd/operator";
+import { Sequelize } from "sequelize";
 
-const initDiscordClient = (clientId?: string, token?: string): Client => {
+const initDiscordClient = (
+  clientId?: string,
+  token?: string
+): {
+  client: Client;
+  sequelize: Sequelize | null;
+} => {
   if (!token || !clientId) throw new Error("Missing environment variables");
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+  let sequelize = null;
 
   client.once(Events.ClientReady, async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
+
+    sequelize = await initDatabase();
     initCronJob(client);
 
     client.on(Events.GuildCreate, async (guild) => {
@@ -55,7 +66,7 @@ const initDiscordClient = (clientId?: string, token?: string): Client => {
 
   client.login(token);
 
-  return client;
+  return { client, sequelize };
 };
 
 export default initDiscordClient;
