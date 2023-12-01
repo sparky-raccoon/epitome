@@ -21,7 +21,6 @@ const addSource = async (
   const channel = await Models.Channel.findByPk(channelId);
   if (!channel) await Models.Channel.create({ id: channelId, guildId });
 
-  await Models.ChannelSource.create({ channelId, sourceId: source.id });
   await Models.Source.create({ ...source });
 };
 
