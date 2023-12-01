@@ -13,7 +13,7 @@ const initDatabase = async (): Promise<Sequelize> => {
 const addSource = async (
   guildId: string,
   channelId: string,
-  source: { id: string; name: string; type: string }
+  source: { name: string; type: string }
 ): Promise<void> => {
   const guild = await Models.Guild.findByPk(guildId);
   if (!guild) await Models.Guild.create({ id: guildId });

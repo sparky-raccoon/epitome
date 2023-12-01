@@ -65,8 +65,9 @@ class Source extends Model<InferAttributes<Source>, InferCreationAttributes<Sour
 Source.init(
   {
     id: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       primaryKey: true,
+      autoIncrement: true,
     },
     name: DataTypes.STRING,
     type: DataTypes.STRING,
