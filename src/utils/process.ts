@@ -1,16 +1,10 @@
 import { ChatInputCommandInteraction, ComponentType, Message as DiscordMessage } from "discord.js";
-import { v4 as uuidv4 } from "uuid";
 import { Command, Message, SourceType, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
-import {
-  addSource,
-  deleteSource,
-  listSources,
-  findDuplicateSourceWithUrl,
-  getRssNameFromUrl,
-} from "@/utils/source";
+import { findDuplicateSourceWithUrl, getRssNameFromUrl } from "@/utils/source";
+import { addSource, deleteSource, listGuildSources } from "@/bdd/operator";
 import { getMessage } from "@/utils/messages";
-import { Source } from "@/utils/types";
-import logger from "./logger";
+import { SourceCreation } from "@/bdd/models/source";
+import logger from "@/utils/logger";
 
 const TIMEOUT = 60000;
 
@@ -37,6 +31,9 @@ class Process {
 
   async add() {
     try {
+      const { guildId, channelId } = this.interaction;
+      if (!guildId || !channelId) throw new Error(INTERNAL_ERROR);
+
       await this.interaction.deferReply();
 
       const url = this.interaction.options.getString("url");
@@ -52,7 +49,7 @@ class Process {
 
       const type = SourceType.RSS;
       const name = await getRssNameFromUrl(url);
-      const source: Source = { id: uuidv4(), type, name, url };
+      const source: SourceCreation = { type, name, url };
 
       let message = getMessage(Message.ADD_CONFIRM, source);
       const response = await this.interaction.editReply(message);
@@ -62,7 +59,7 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        await addSource(source);
+        await addSource(guildId, channelId, source);
         message = getMessage(Message.ADD_SUCCESS, source);
         await confirmInteraction.update(message);
       } else this.cancel(this.interaction);
@@ -76,12 +73,15 @@ class Process {
 
   async delete() {
     try {
+      const { guildId, channelId } = this.interaction;
+      if (!guildId || !channelId) throw new Error(INTERNAL_ERROR);
+
       await this.interaction.deferReply();
 
       let message;
-      const sourceList = await listSources();
+      const sourceList = await listGuildSources(guildId);
 
-      if (Object.keys(sourceList).length === 0) {
+      if (sourceList.length === 0) {
         message = getMessage(Message.DELETE_NO_SAVED_SOURCES);
         await this.interaction.editReply(message);
         this.terminate(this.interaction.user.id);
@@ -97,7 +97,7 @@ class Process {
       });
       const selectedValue = selectInteraction.values[0];
       const [type, id] = selectedValue.split("|");
-      const selectedIncompleteSource = sourceList[type as SourceType]?.[id];
+      const selectedIncompleteSource = sourceList.find((source) => source.id === id);
 
       if (!selectedIncompleteSource) throw new Error(INTERNAL_ERROR);
 
@@ -115,7 +115,7 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        await deleteSource(id, type as SourceType);
+        await deleteSource(guildId, channelId, id);
         message = getMessage(Message.DELETE_SUCCESS, source);
         await confirmInteraction.update(message);
       } else this.cancel(this.interaction);
@@ -129,9 +129,12 @@ class Process {
 
   async list() {
     try {
+      const { guildId } = this.interaction;
+      if (!guildId) throw new Error(INTERNAL_ERROR);
+
       await this.interaction.deferReply();
 
-      const sourceList = await listSources();
+      const sourceList = await listGuildSources(guildId);
       const message = getMessage(Message.LIST, sourceList);
       this.interaction.editReply(message);
 

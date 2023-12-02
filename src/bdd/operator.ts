@@ -1,11 +1,11 @@
 import { Sequelize } from "sequelize";
 import sequelize from "@/bdd/sequelize";
-
-const Models = sequelize.models;
+import { Source, SourceCreation } from "@/bdd/models/source";
+import Models from "@/bdd/models/index";
 
 const initDatabase = async (): Promise<Sequelize> => {
   await sequelize.authenticate();
-  sequelize.sync();
+  sequelize.sync({ force: process.env.NODE_ENV === "development" });
 
   return sequelize;
 };
@@ -13,15 +13,12 @@ const initDatabase = async (): Promise<Sequelize> => {
 const addSource = async (
   guildId: string,
   channelId: string,
-  source: { name: string; type: string }
+  source: SourceCreation
 ): Promise<void> => {
-  const guild = await Models.Guild.findByPk(guildId);
-  if (!guild) await Models.Guild.create({ id: guildId });
+  const existingSource = await Models.Source.findOne({ where: { url: source.url } });
+  if (existingSource) throw new Error("Cette source de publications existe déjà.");
 
-  const channel = await Models.Channel.findByPk(channelId);
-  if (!channel) await Models.Channel.create({ id: channelId, guildId });
-
-  await Models.Source.create({ ...source });
+  await Models.Source.create(source);
 };
 
 const deleteSource = async (
@@ -29,19 +26,13 @@ const deleteSource = async (
   channelId: string,
   sourceId: string
 ): Promise<void> => {
-  const channelSource = await Models.ChannelSource.destroy({ where: { channelId, sourceId } });
-  if (!channelSource) throw new Error("Cette source de publications n'existe pas, ou plus.");
+  const source = await Models.Source.findByPk(sourceId);
+  if (!source) throw new Error("Cette source de publications n'existe pas, ou plus.");
 
-  const remainingS = await Models.ChannelSource.findAll({ where: { sourceId } });
-  const remainingC = await Models.ChannelSource.findAll({ where: { channelId } });
-  if (remainingS.length === 0) await Models.Source.destroy({ where: { id: sourceId } });
-  if (remainingC.length === 0) await Models.Channel.destroy({ where: { id: channelId } });
-
-  const remainingG = await Models.Channel.findAll({ where: { guildId } });
-  if (remainingG.length === 0) await Models.Guild.destroy({ where: { id: guildId } });
+  await Models.Source.destroy({ where: { id: sourceId } });
 };
 
-const listGuildSources = async (guildId: string) => {
+const listGuildSources = async (guildId: string): Promise<Source[]> => {
   const sources = await Models.Source.findAll({
     include: [
       {

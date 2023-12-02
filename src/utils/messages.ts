@@ -1,6 +1,13 @@
 import { ColorResolvable, EmbedBuilder, bold } from "discord.js";
 import { Message, SourceType } from "@/utils/constants";
-import { Publication, Source, SourceList } from "@/utils/types";
+import { Source, SourceCreation } from "@/bdd/models/source";
+import {
+  Publication,
+  isPublication,
+  isSource,
+  isSourceCreation,
+  isSourceList,
+} from "@/utils/types";
 import { formatSourceListToDescription, formatSourceToBlockQuote } from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
 import { selectSavedSourcesMenu } from "@/components/select-menu";
@@ -18,7 +25,10 @@ const getColorForSourceType = (sourceType: SourceType): ColorResolvable => {
   }
 };
 
-const getMessage = (type: Message, data?: Source | SourceList | string | Publication) => {
+const getMessage = (
+  type: Message,
+  data?: Source | SourceCreation | Source[] | string | Publication
+) => {
   let color: ColorResolvable = "#ffffff";
   let title = "✸ ";
   let description = "";
@@ -42,7 +52,8 @@ const getMessage = (type: Message, data?: Source | SourceList | string | Publica
       break;
     }
     case Message.POST: {
-      const { type, name, title: pTitle, link, contentSnippet, author, date } = data as Publication;
+      if (!isPublication(data)) throw new Error("Invalid data type.");
+      const { type, name, title: pTitle, link, contentSnippet, author, date } = data;
       title += `[${name}] ${pTitle}`;
       description =
         `${contentSnippet}\n\n` +
@@ -53,17 +64,18 @@ const getMessage = (type: Message, data?: Source | SourceList | string | Publica
       break;
     }
     case Message.LIST: {
+      if (!isSourceList(data)) throw new Error("Invalid data type.");
       title += "Liste des sources de publications suivies";
-      if (Object.keys(data as SourceList).length === 0)
-        description = "Aucune source de publications n'a été configurée.";
-      else description = formatSourceListToDescription(data as SourceList);
+      if (data.length === 0) description = "Aucune source de publications n'a été configurée.";
+      else description = formatSourceListToDescription(data);
       break;
     }
     case Message.ADD_CONFIRM: {
+      if (!isSourceCreation(data)) throw new Error("Invalid data type.");
       title += "Ajout d’une source de publications";
       description =
         "Vous êtes sur le point d’ajouter la source de publications suivante :\n" +
-        formatSourceToBlockQuote(data as Source);
+        formatSourceToBlockQuote(data);
       component = confirmOrCancelButton();
       break;
     }
@@ -75,24 +87,27 @@ const getMessage = (type: Message, data?: Source | SourceList | string | Publica
       break;
     }
     case Message.ADD_ALREADY_EXISTS: {
+      if (!isSource(data)) throw new Error("Invalid data type.");
       title += "Ajout d’une source de publications";
       description =
         "Il semblerait que cette source de publications soit déjà suivie :\n" +
-        formatSourceToBlockQuote(data as Source);
+        formatSourceToBlockQuote(data);
       break;
     }
     case Message.DELETE_SELECT: {
+      if (!isSourceList(data)) throw new Error("Invalid data type.");
       title += "Suppression d’une source de publications suivie";
       description =
         "Sélectionne la source de publications que tu souhaites supprimer dans la liste ci-dessous :";
-      component = selectSavedSourcesMenu(data as SourceList);
+      component = selectSavedSourcesMenu(data);
       break;
     }
     case Message.DELETE_CONFIRM: {
+      if (!isSource(data)) throw new Error("Invalid data type.");
       title += "Suppression d’une source de publiciations suivie";
       description =
         "La source de publications suivante est sur le point d'être supprimée :\n" +
-        formatSourceToBlockQuote(data as Source);
+        formatSourceToBlockQuote(data);
       component = confirmOrCancelButton();
       break;
     }
@@ -112,8 +127,9 @@ const getMessage = (type: Message, data?: Source | SourceList | string | Publica
       break;
     }
     case Message.ERROR: {
+      if (typeof data !== "string") throw new Error("Invalid data type.");
       title += "Erreur";
-      description = "Quelque chose ne tourne pas rond.\n" + (data as string);
+      description = "Quelque chose ne tourne pas rond.\n" + data;
     }
   }
 
