@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "export NODE_ENV=development && tsx watch src/index.ts",
     "build": "rm -rf dist && tsc -p tsconfig.prod.json && tsc-alias",
     "start": "pm2 start -f dist/index.js --name epitome",
     "stop": "pm2 stop epitome && pm2 delete epitome",

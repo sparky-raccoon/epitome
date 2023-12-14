@@ -1,31 +1,40 @@
-import { ModelDefined, DataTypes, Optional } from "sequelize";
+import {
+  Model,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+  DataTypes,
+  ForeignKey,
+} from "sequelize";
 import sequelize from "@/bdd/sequelize";
 import Channel from "@/bdd/models/channel";
 
-interface TagAttributes {
-  id: string;
-  channelId: string;
-  name: string;
+class Tag extends Model<InferAttributes<Tag>, InferCreationAttributes<Tag>> {
+  declare id: CreationOptional<string>;
+  declare channelId: ForeignKey<Channel["id"]>;
+  declare name: string;
 }
 
-interface TagCreationAttributes extends Optional<TagAttributes, "id"> {}
-
-const Tag: ModelDefined<TagAttributes, TagCreationAttributes> = sequelize.define(
-  "Tag",
+Tag.init(
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       primaryKey: true,
-      autoIncrement: true,
     },
-    channelId: DataTypes.STRING,
-    name: DataTypes.STRING,
+    channelId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
   {
+    sequelize,
     tableName: "tags",
+    timestamps: false,
   }
 );
-
-Tag.belongsTo(Channel, { foreignKey: "channelId", as: "tags" });
 
 export default Tag;

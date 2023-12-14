@@ -1,21 +1,47 @@
-import { ModelDefined, DataTypes } from "sequelize";
+import {
+  Model,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+  DataTypes,
+  HasManyGetAssociationsMixin,
+  HasManyCountAssociationsMixin,
+  HasManyHasAssociationMixin,
+  HasManyAddAssociationMixin,
+  HasManyAddAssociationsMixin,
+  HasManyRemoveAssociationMixin,
+  HasManyRemoveAssociationsMixin,
+  HasManyCreateAssociationMixin,
+} from "sequelize";
 import sequelize from "@/bdd/sequelize";
+import Channel from "@/bdd/models/channel";
 
-interface GuildAttributes {
-  id: string;
+class Guild extends Model<InferAttributes<Guild>, InferCreationAttributes<Guild>> {
+  declare id: CreationOptional<string>;
+
+  declare getChannels: HasManyGetAssociationsMixin<Channel>;
+  declare countChannels: HasManyCountAssociationsMixin;
+  declare hasChannel: HasManyHasAssociationMixin<Channel, string>;
+  declare hasChannels: HasManyHasAssociationMixin<Channel[], string>;
+  declare addChannel: HasManyAddAssociationMixin<Channel, string>;
+  declare addChannels: HasManyAddAssociationsMixin<Channel[], string>;
+  declare removeChannel: HasManyRemoveAssociationMixin<Channel, string>;
+  declare removeChannels: HasManyRemoveAssociationsMixin<Channel[], string>;
+  declare createChannel: HasManyCreateAssociationMixin<Channel, "guildId">;
 }
 
-interface GuildCreationAttributes extends GuildAttributes {}
-
-const Guild: ModelDefined<GuildAttributes, GuildCreationAttributes> = sequelize.define(
-  "Guild",
+Guild.init(
   {
     id: {
       type: DataTypes.STRING,
       primaryKey: true,
     },
   },
-  { tableName: "guilds" }
+  {
+    sequelize,
+    tableName: "guilds",
+    timestamps: false,
+  }
 );
 
 export default Guild;

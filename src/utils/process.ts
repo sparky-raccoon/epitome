@@ -1,7 +1,12 @@
 import { ChatInputCommandInteraction, ComponentType, Message as DiscordMessage } from "discord.js";
 import { Command, Message, SourceType, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
-import { findDuplicateSourceWithUrl, getRssNameFromUrl } from "@/utils/source";
-import { addSource, deleteSource, listGuildSources } from "@/bdd/operator";
+import {
+  findDuplicateSourceWithUrl,
+  getRssNameFromUrl,
+  addSource,
+  deleteSource,
+  listGuildSources,
+} from "@/bdd/operator";
 import { getMessage } from "@/utils/messages";
 import { SourceCreation } from "@/bdd/models/source";
 import logger from "@/utils/logger";
@@ -31,13 +36,12 @@ class Process {
 
   async add() {
     try {
-      const { guildId, channelId } = this.interaction;
-      if (!guildId || !channelId) throw new Error(INTERNAL_ERROR);
-
+      logger.info("Adding source");
       await this.interaction.deferReply();
 
+      const { guildId, channelId } = this.interaction;
       const url = this.interaction.options.getString("url");
-      if (!url) throw new Error(INTERNAL_ERROR);
+      if (!guildId || !channelId || !url) throw new Error(INTERNAL_ERROR);
 
       const duplicateSource = await findDuplicateSourceWithUrl(url);
       if (duplicateSource) {

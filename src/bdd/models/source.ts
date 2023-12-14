@@ -1,32 +1,56 @@
-import { ModelDefined, DataTypes } from "sequelize";
+import {
+  Model,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+  DataTypes,
+  ForeignKey,
+  Attributes,
+  CreationAttributes,
+} from "sequelize";
 import sequelize from "@/bdd/sequelize";
 import Channel from "@/bdd/models/channel";
 
-interface SourceAttributes {
-  id: string;
-  type: string;
-  name: string;
-  url: string;
+type SourceAttributes = Attributes<Source>;
+type SourceCreationAttributes = CreationAttributes<Source>;
+
+class Source extends Model<InferAttributes<Source>, InferCreationAttributes<Source>> {
+  declare id: CreationOptional<string>;
+  declare channelId: ForeignKey<Channel["id"]>;
+  declare type: string;
+  declare name: string;
+  declare url: string;
 }
 
-interface SourceCreationAttributes extends Omit<SourceAttributes, "id"> {}
-
-const Source: ModelDefined<SourceAttributes, SourceCreationAttributes> = sequelize.define(
-  "Source",
+Source.init(
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       primaryKey: true,
-      autoIncrement: true,
     },
-    type: DataTypes.STRING,
-    name: DataTypes.STRING,
-    url: DataTypes.STRING,
+    channelId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    type: {
+      type: DataTypes.STRING,
+      defaultValue: "RSS",
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    url: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
-  { tableName: "sources" }
+  {
+    sequelize,
+    tableName: "sources",
+    timestamps: false,
+  }
 );
-
-Source.belongsToMany(Channel, { through: "ChannelSource", as: "sources" });
 
 export { SourceAttributes as Source };
 export { SourceCreationAttributes as SourceCreation };

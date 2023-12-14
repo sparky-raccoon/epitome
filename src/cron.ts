@@ -1,4 +1,4 @@
-import { schedule } from "node-cron";
+/* import { schedule } from "node-cron";
 import Parser from "rss-parser";
 import logger from "@/utils/logger";
 import { listSources, replaceSourceList } from "@/utils/source";
@@ -72,10 +72,10 @@ const parseRssFeeds = async (): Promise<Publication[]> => {
   if (shouldTimestampsBeUpdated) await replaceSourceList(sourceList);
 
   return publications;
-};
+}; */
 
-const initCronJob = async (client: Client) => {
-  logger.info("Initializing cron job");
+const initCronJob = async () => {
+  /* logger.info("Initializing cron job");
   const checkAndPost = async () => {
     const testChannel = client.channels.cache.get("1173722193990000750");
     if (testChannel && testChannel.type === ChannelType.GuildText) {
@@ -87,8 +87,8 @@ const initCronJob = async (client: Client) => {
     }
   };
 
-  checkAndPost();
-  schedule("0 */4 * * *", () => checkAndPost());
+  checkAndPost(); */
+  // schedule("0 */4 * * *", () => checkAndPost());
 };
 
 export default initCronJob;
