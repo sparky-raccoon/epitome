@@ -17,7 +17,7 @@ type SourceCreationAttributes = CreationAttributes<Source>;
 class Source extends Model<InferAttributes<Source>, InferCreationAttributes<Source>> {
   declare id: CreationOptional<string>;
   declare channelId: ForeignKey<Channel["id"]>;
-  declare type: string;
+  declare type: CreationOptional<string>;
   declare name: string;
   declare url: string;
 }
@@ -48,7 +48,6 @@ Source.init(
   {
     sequelize,
     tableName: "sources",
-    timestamps: false,
   }
 );
 

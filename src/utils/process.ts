@@ -36,7 +36,6 @@ class Process {
 
   async add() {
     try {
-      logger.info("Adding source");
       await this.interaction.deferReply();
 
       const { guildId, channelId } = this.interaction;
@@ -51,9 +50,8 @@ class Process {
         return;
       }
 
-      const type = SourceType.RSS;
       const name = await getRssNameFromUrl(url);
-      const source: SourceCreation = { type, name, url };
+      const source: SourceCreation = { name, url };
 
       let message = getMessage(Message.ADD_CONFIRM, source);
       const response = await this.interaction.editReply(message);
