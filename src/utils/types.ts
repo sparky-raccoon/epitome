@@ -34,12 +34,7 @@ const isSourceCreation = (sourceCreation: unknown): sourceCreation is SourceCrea
     return false;
   }
 
-  return (
-    sourceCreation &&
-    "type" in sourceCreation &&
-    "name" in sourceCreation &&
-    "url" in sourceCreation
-  );
+  return sourceCreation && "name" in sourceCreation && "url" in sourceCreation;
 };
 
 const isSource = (source: unknown): source is Source => {

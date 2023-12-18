@@ -5,7 +5,7 @@ import {
   getRssNameFromUrl,
   addSource,
   deleteSource,
-  listGuildSources,
+  listChannelSources,
 } from "@/bdd/operator";
 import { getMessage } from "@/utils/messages";
 import { SourceCreation } from "@/bdd/models/source";
@@ -81,7 +81,7 @@ class Process {
       await this.interaction.deferReply();
 
       let message;
-      const sourceList = await listGuildSources(guildId);
+      const sourceList = await listChannelSources(channelId);
 
       if (sourceList.length === 0) {
         message = getMessage(Message.DELETE_NO_SAVED_SOURCES);
@@ -131,12 +131,12 @@ class Process {
 
   async list() {
     try {
-      const { guildId } = this.interaction;
-      if (!guildId) throw new Error(INTERNAL_ERROR);
+      const { guildId, channelId } = this.interaction;
+      if (!guildId || !channelId) throw new Error(INTERNAL_ERROR);
 
       await this.interaction.deferReply();
 
-      const sourceList = await listGuildSources(guildId);
+      const sourceList = await listChannelSources(channelId);
       const message = getMessage(Message.LIST, sourceList);
       this.interaction.editReply(message);
 

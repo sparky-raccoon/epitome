@@ -66,7 +66,8 @@ const getMessage = (
     case Message.LIST: {
       if (!isSourceList(data)) throw new Error("Invalid data type.");
       title += "Liste des sources de publications suivies";
-      if (data.length === 0) description = "Aucune source de publications n'a été configurée.";
+      if (data.length === 0)
+        description = "Aucune source de publications n'a été configurée dans ce channel.";
       else description = formatSourceListToDescription(data);
       break;
     }

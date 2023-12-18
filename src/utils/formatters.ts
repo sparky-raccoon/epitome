@@ -11,10 +11,22 @@ const formatSourceToBlockQuote = (source: Source | SourceCreation): `>>> ${strin
 
 const formatSourceListToDescription = (sourceList: Source[]): string => {
   let description = "";
+  type ByTypeSourceList = { [type: string]: { name: string; url: string }[] };
 
-  sourceList.forEach((source) => {
-    const { type, name, url } = source;
-    description += `**${type.toUpperCase()}**\n` + `Chaîne : ${name}\n` + `Url : ${url}`;
+  const byTypeSourceList = sourceList.reduce((acc: ByTypeSourceList, source) => {
+    const { type } = source;
+    if (!acc[type]) acc[type] = [];
+    acc[type].push({ name: source.name, url: source.url });
+
+    return acc;
+  }, {});
+
+  Object.keys(byTypeSourceList).forEach((type) => {
+    description += `**${type.toUpperCase()}**\n`;
+    byTypeSourceList[type].forEach((source) => {
+      const { name, url } = source;
+      description += `- ${name} (${url})\n`;
+    });
   });
 
   return description;

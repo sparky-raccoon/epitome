@@ -8,7 +8,7 @@ import logger from "@/utils/logger";
 const initDatabase = async (): Promise<Sequelize> => {
   logger.info("Initializing database", process.env.NODE_ENV);
   await sequelize.authenticate();
-  sequelize.sync({ force: true });
+  sequelize.sync();
 
   return sequelize;
 };
@@ -30,14 +30,11 @@ const addSource = async (
   channelId: string,
   newSource: SourceCreation
 ): Promise<void> => {
-  logger.info(`Adding source ${newSource.name} to channel ${channelId} in guild ${guildId}`);
   let guild = await Models.Guild.findByPk(guildId);
   if (!guild) guild = await Models.Guild.create({ id: guildId });
-  logger.info(`Guild ${guildId} found`);
 
   let channel = await Models.Channel.findByPk(channelId);
   if (!channel) channel = await guild.createChannel({ id: channelId });
-  logger.info(`Channel ${channelId} found`);
 
   const source = await Models.Source.findOne({ where: { url: newSource.url } });
   if (source) throw new Error("Cette source de publications existe déjà.");
@@ -55,19 +52,9 @@ const deleteSource = async (
   await Models.Source.destroy({ where: { id: sourceId } });
 };
 
-const listGuildSources = async (guildId: string): Promise<Source[]> => {
-  const sources = await Models.Source.findAll({
-    include: [
-      {
-        model: Models.Channel,
-        through: {
-          where: { guildId },
-        },
-      },
-    ],
-  });
-
-  return sources.map((source) => source.toJSON());
+const listChannelSources = async (channelId: string): Promise<Source[]> => {
+  const sources = await Models.Source.findAll({ where: { channelId } });
+  return sources;
 };
 
 const getChannelTags = async (channelId: string) => {
@@ -88,7 +75,7 @@ export {
   findDuplicateSourceWithUrl,
   addSource,
   deleteSource,
-  listGuildSources,
+  listChannelSources,
   getChannelTags,
   getRssNameFromUrl,
 };
