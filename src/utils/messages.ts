@@ -44,7 +44,7 @@ const getMessage = (
         "Il suffit de me dire quoi suivre, et je te retournerai les dernières publications " +
         "dans le canal Discord où j’aurai été configuré.e.\n\n" +
         "Voici la liste des commandes auxquelles je réponds :\n" +
-        `▪︎ ${bold("/add <name> <url>")} - pour suivre une nouvelle source de publications.\n` +
+        `▪︎ ${bold("/add <url>")} - pour suivre une nouvelle source de publications.\n` +
         `▪︎ ${bold("/delete")} - pour supprimer une source de publications suivie.\n` +
         `▪︎ ${bold("/cancel")} - pour annuler une procédure d’ajout ou de suppression en cours.\n` +
         `▪︎ ${bold("/list")} - pour lister l’ensemble des sources suivies.\n` +
