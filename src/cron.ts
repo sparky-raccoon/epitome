@@ -38,7 +38,14 @@ const parseRssFeeds = async (channelId: string): Promise<Publication[]> => {
         if (lastParsedMs < pubDateMs) {
           await updateSourceTimestamp(id, pubDateMs.toString());
 
-          if (
+          const duplicateIndex = publications.findIndex((p) => p.title === title);
+          if (duplicateIndex >= 0) {
+            const duplicate = publications[duplicateIndex];
+            publications[duplicateIndex] = {
+              ...duplicate,
+              duplicateSources: [...(duplicate.duplicateSources || []), name],
+            };
+          } else if (
             tagList.length === 0 ||
             tagList
               .map((t) => t.name)

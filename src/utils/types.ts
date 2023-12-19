@@ -10,6 +10,7 @@ interface Publication {
   date: string;
   dateMs: number;
   author?: string;
+  duplicateSources?: string[];
 }
 
 const isPublication = (publication: unknown): publication is Publication => {

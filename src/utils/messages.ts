@@ -75,13 +75,23 @@ const getMessage = (type: Message, data?: MessageData) => {
     }
     case Message.POST: {
       if (!isPublication(data)) throw new Error("Invalid data type.");
-      const { type, name, title: pTitle, link, contentSnippet, author, date } = data;
+      const {
+        type,
+        name,
+        title: pTitle,
+        link,
+        contentSnippet,
+        author,
+        date,
+        duplicateSources,
+      } = data;
       title += `[${name}] ${pTitle}`;
       description =
         `${contentSnippet}\n\n` +
         `Date de publication : ${date}\n` +
         (author ? `Auteur.rice : ${author}\n` : "") +
-        `Source : ${link}`;
+        `Source : ${link}` +
+        (duplicateSources ? `\nAussi visible sur : ${duplicateSources.join(", ")}` : "");
       color = getColorForSourceType(type);
       break;
     }
