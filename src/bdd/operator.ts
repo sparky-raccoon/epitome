@@ -38,7 +38,7 @@ const addSource = async (
   let channel = await Models.Channel.findByPk(channelId);
   if (!channel) channel = await guild.createChannel({ id: channelId });
 
-  const source = await Models.Source.findOne({ where: { url: newSource.url } });
+  const source = await Models.Source.findOne({ where: { channelId, url: newSource.url } });
   if (source) throw new Error("Cette source de publications existe déjà.");
   else await channel.createSource(newSource);
 };
@@ -50,7 +50,7 @@ const addTag = async (guildId: string, channelId: string, name: string): Promise
   let channel = await Models.Channel.findByPk(channelId);
   if (!channel) channel = await guild.createChannel({ id: channelId });
 
-  const tag = await Models.Tag.findOne({ where: { name } });
+  const tag = await Models.Tag.findOne({ where: { channelId, name } });
   if (tag) throw new Error("Ce filtre existe déjà.");
   else await channel.createTag({ name });
 };
