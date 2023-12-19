@@ -1,8 +1,7 @@
-import { SourceType } from "@/utils/constants";
 import { Source, SourceCreation } from "@/bdd/models/source";
 
 interface Publication {
-  type: SourceType;
+  type: string;
   name: string;
   title: string;
   link: string;

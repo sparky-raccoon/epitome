@@ -1,85 +1,81 @@
-/* import { schedule } from "node-cron";
+import { Client, ChannelType } from "discord.js";
+import { schedule } from "node-cron";
 import Parser from "rss-parser";
 import logger from "@/utils/logger";
-import { listSources, replaceSourceList } from "@/utils/source";
 import { Publication } from "@/utils/types";
-import { ChannelType, Client } from "discord.js";
-import { Message, SourceType } from "@/utils/constants";
+import { Message } from "@/utils/constants";
 import { getMessage } from "@/utils/messages";
+import {
+  listChannelIds,
+  listChannelSources,
+  listChannelTags,
+  updateSourceTimestamp,
+} from "@/bdd/operator";
 
-const FILTER_KEYWORDS = ["féminisme", "féministe", "féminicide", "femme"];
-
-const parseRssFeeds = async (): Promise<Publication[]> => {
+const parseRssFeeds = async (channelId: string): Promise<Publication[]> => {
   logger.info("Parsing RSS feeds");
-  const sourceList = await listSources();
-  const rssSources = sourceList.rss;
+  const sourceList = await listChannelSources(channelId);
+  const tagList = await listChannelTags(channelId);
+  const rssSources = sourceList.filter((s) => s.type === "RSS");
   const publications: Publication[] = [];
-  let shouldTimestampsBeUpdated = false;
 
-  if (rssSources) {
-    const rssSourceIds = Object.keys(rssSources);
-    if (rssSourceIds.length > 0) {
-      const parser = new Parser();
-      const promises = rssSourceIds.map(async (id) => await parser.parseURL(rssSources[id].url));
+  if (rssSources.length > 0) {
+    const parser = new Parser();
 
-      const results = await Promise.allSettled(promises);
-      results.forEach((result, index) => {
-        const rssSourceId = rssSourceIds[index];
-        const rssSource = rssSources[rssSourceId];
-        const rssSourceName = rssSource.name;
+    for (const source of rssSources) {
+      const { id, type, name, url, timestamp } = source;
+      const feed = await parser.parseURL(url);
 
-        if (result.status === "fulfilled") {
-          logger.info(`Successfully parsed RSS source ${rssSourceName}`);
-          const feed = result.value;
-          const items = feed.items;
-          const lastParsedMs = parseInt(rssSource.timestamp);
+      const items = feed.items;
+      const lastParsedMs = parseInt(timestamp);
 
-          for (let i = items.length - 1; i >= 0; i--) {
-            const item = items[i];
-            const { pubDate, title, link, contentSnippet, creator: author } = item;
-            if (!pubDate || !title || !link || !contentSnippet) continue;
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        const { pubDate, title, link, contentSnippet, creator: author } = item;
+        if (!pubDate || !title || !link || !contentSnippet) continue;
 
-            const pubDateMs = new Date(pubDate).getTime();
-            if (lastParsedMs < pubDateMs) {
-              if (!shouldTimestampsBeUpdated) shouldTimestampsBeUpdated = true;
-              rssSource.timestamp = pubDateMs.toString();
+        const pubDateMs = new Date(pubDate).getTime();
+        if (lastParsedMs < pubDateMs) {
+          await updateSourceTimestamp(id, pubDateMs.toString());
 
-              if (
-                FILTER_KEYWORDS.some(
-                  (keyword) =>
-                    title.toLowerCase().includes(keyword) ||
-                    contentSnippet.toLowerCase().includes(keyword)
-                )
-              ) {
-                publications.push({
-                  type: SourceType.RSS,
-                  name: rssSourceName,
-                  title,
-                  link,
-                  contentSnippet,
-                  date: new Date(pubDateMs).toLocaleString("fr-FR"),
-                  dateMs: pubDateMs,
-                  author,
-                });
-              }
-            }
+          if (
+            tagList.length === 0 ||
+            tagList.some(
+              (keyword) =>
+                title.toLowerCase().includes(keyword) ||
+                contentSnippet.toLowerCase().includes(keyword)
+            )
+          ) {
+            publications.push({
+              type,
+              name,
+              title,
+              link,
+              contentSnippet,
+              date: new Date(pubDateMs).toLocaleString("fr-FR"),
+              dateMs: pubDateMs,
+              author,
+            });
           }
-        } else logger.error(`Error while parsing RSS source ${rssSourceName}`);
-      });
+        }
+      }
     }
   }
 
-  if (shouldTimestampsBeUpdated) await replaceSourceList(sourceList);
-
   return publications;
-}; */
+};
 
-const initCronJob = async () => {
-  /* logger.info("Initializing cron job");
+const initCronJob = async (client: Client) => {
+  logger.info("Initializing cron job");
+
   const checkAndPost = async () => {
-    const testChannel = client.channels.cache.get("1173722193990000750");
-    if (testChannel && testChannel.type === ChannelType.GuildText) {
-      const publications = await parseRssFeeds();
+    const channelIds = await listChannelIds();
+    for (const id of channelIds) {
+      logger.info(`Checking channel ${id}`);
+      const testChannel = client.channels.cache.get(id);
+      if (!testChannel || testChannel.type !== ChannelType.GuildText) continue;
+
+      const publications = await parseRssFeeds(id);
       publications.sort((a, b) => a.dateMs - b.dateMs);
       publications.forEach((publication) => {
         testChannel.send(getMessage(Message.POST, publication));
@@ -87,8 +83,8 @@ const initCronJob = async () => {
     }
   };
 
-  checkAndPost(); */
-  // schedule("0 */4 * * *", () => checkAndPost());
+  checkAndPost();
+  schedule("0 */4 * * *", () => checkAndPost());
 };
 
 export default initCronJob;

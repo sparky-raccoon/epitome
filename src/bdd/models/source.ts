@@ -20,6 +20,7 @@ class Source extends Model<InferAttributes<Source>, InferCreationAttributes<Sour
   declare type: CreationOptional<string>;
   declare name: string;
   declare url: string;
+  declare timestamp: CreationOptional<string>;
 }
 
 Source.init(
@@ -45,10 +46,15 @@ Source.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    timestamp: {
+      type: DataTypes.STRING,
+      defaultValue: 0,
+    },
   },
   {
     sequelize,
     tableName: "sources",
+    timestamps: false,
   }
 );
 

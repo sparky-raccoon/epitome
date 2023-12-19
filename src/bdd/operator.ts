@@ -8,7 +8,7 @@ import logger from "@/utils/logger";
 const initDatabase = async (): Promise<Sequelize> => {
   logger.info("Initializing database", process.env.NODE_ENV);
   await sequelize.authenticate();
-  sequelize.sync();
+  await sequelize.sync();
 
   return sequelize;
 };
@@ -57,15 +57,23 @@ const deleteSource = async (
   if (guildChannels.length === 0) Models.Guild.destroy({ force: true, where: { id: guildId } });
 };
 
+const listChannelIds = async (): Promise<string[]> => {
+  const channels = await Models.Channel.findAll();
+  return channels.map((c) => c.id);
+};
+
 const listChannelSources = async (channelId: string): Promise<Source[]> => {
   const sources = await Models.Source.findAll({ where: { channelId } });
   return sources;
 };
 
-const getChannelTags = async (channelId: string) => {
+const listChannelTags = async (channelId: string): Promise<string[]> => {
   const tags = await Models.Tag.findAll({ where: { channelId }, attributes: ["name"] });
+  return tags.map((t) => t.name);
+};
 
-  return tags;
+const updateSourceTimestamp = async (sourrceId: number, timestamp: string): Promise<void> => {
+  await Models.Source.update({ timestamp }, { where: { id: sourrceId } });
 };
 
 const getRssNameFromUrl = async (url: string): Promise<string> => {
@@ -80,7 +88,9 @@ export {
   findDuplicateSourceWithUrl,
   addSource,
   deleteSource,
+  listChannelIds,
   listChannelSources,
-  getChannelTags,
+  listChannelTags,
+  updateSourceTimestamp,
   getRssNameFromUrl,
 };

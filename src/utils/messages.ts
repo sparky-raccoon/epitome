@@ -1,5 +1,5 @@
 import { ColorResolvable, EmbedBuilder, bold } from "discord.js";
-import { Message, SourceType } from "@/utils/constants";
+import { Message } from "@/utils/constants";
 import { Source, SourceCreation } from "@/bdd/models/source";
 import {
   Publication,
@@ -12,15 +12,15 @@ import { formatSourceListToDescription, formatSourceToBlockQuote } from "@/utils
 import { confirmOrCancelButton } from "@/components/confirm-button";
 import { selectSavedSourcesMenu } from "@/components/select-menu";
 
-const getColorForSourceType = (sourceType: SourceType): ColorResolvable => {
+const getColorForSourceType = (sourceType: string): ColorResolvable => {
   switch (sourceType) {
-    case SourceType.INSTAGRAM:
+    case "INSTAGRAM":
       return "#e1306c";
-    case SourceType.TWITTER:
+    case "TWITTER":
       return "#1da1f2";
-    case SourceType.YOUTUBE:
+    case "YOUTUBE":
       return "#ff0000";
-    case SourceType.RSS:
+    default:
       return "#ee802f";
   }
 };
