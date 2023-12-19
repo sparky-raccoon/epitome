@@ -15,7 +15,7 @@ type TagAttributes = Attributes<Tag>;
 type TagCreationAttributes = CreationAttributes<Tag>;
 
 class Tag extends Model<InferAttributes<Tag>, InferCreationAttributes<Tag>> {
-  declare id: CreationOptional<number>;
+  declare id: CreationOptional<string>;
   declare channelId: ForeignKey<Channel["id"]>;
   declare name: string;
 }
@@ -23,8 +23,8 @@ class Tag extends Model<InferAttributes<Tag>, InferCreationAttributes<Tag>> {
 Tag.init(
   {
     id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
     channelId: {

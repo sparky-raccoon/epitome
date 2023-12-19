@@ -140,7 +140,7 @@ class Process {
         time: TIMEOUT,
         componentType: ComponentType.StringSelect,
       });
-      const selectedId = parseInt(selectInteraction.values[0]);
+      const selectedId = selectInteraction.values[0];
       const selectedSourceOrTag = fullList.find((sourceOrTag) => sourceOrTag.id === selectedId);
 
       if (!selectedSourceOrTag) throw new Error(INTERNAL_ERROR);

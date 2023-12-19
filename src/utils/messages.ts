@@ -142,7 +142,8 @@ const getMessage = (type: Message, data?: MessageData) => {
     case Message.DELETE_SELECT: {
       if (!isSourceAndTagList(data)) throw new Error("Invalid data type.");
       title += DELETE_SOURCE_OR_TAG_TITLE;
-      description = "Sélectionne la source que tu souhaites supprimer dans la liste ci-dessous :";
+      description =
+        "Sélectionne dans la liste ci-dessous la source ou le tag / filtre que tu souhaites supprimer :";
       component = selectSavedSourcesOrTagsMenu(data);
       break;
     }

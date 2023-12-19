@@ -58,7 +58,7 @@ const addTag = async (guildId: string, channelId: string, name: string): Promise
 const deleteSource = async (
   guildId: string,
   channelId: string,
-  sourceId: number
+  sourceId: string
 ): Promise<void> => {
   const source = await Models.Source.findByPk(sourceId);
   if (source) await source.destroy({ force: true });
@@ -93,7 +93,7 @@ const listChannelSources = async (channelId: string): Promise<Source[]> => {
 };
 
 const listChannelTags = async (channelId: string): Promise<Tag[]> => {
-  const tags = await Models.Tag.findAll({ where: { channelId }, attributes: ["name"] });
+  const tags = await Models.Tag.findAll({ where: { channelId } });
   return tags;
 };
 
@@ -103,7 +103,7 @@ const listEverything = async (channelId: string): Promise<(Source | Tag)[]> => {
   return [...sources, ...tags];
 };
 
-const updateSourceTimestamp = async (sourrceId: number, timestamp: string): Promise<void> => {
+const updateSourceTimestamp = async (sourrceId: string, timestamp: string): Promise<void> => {
   await Models.Source.update({ timestamp }, { where: { id: sourrceId } });
 };
 

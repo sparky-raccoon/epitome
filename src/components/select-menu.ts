@@ -14,12 +14,12 @@ const selectSavedSourcesOrTagsMenu = (
     if (isSource(sourceOrTag)) {
       const { id, name, url } = sourceOrTag;
       return new StringSelectMenuOptionBuilder()
-        .setLabel(name)
+        .setLabel(`[Source] ${name}`)
         .setValue(`${id}`)
         .setDescription(url);
     } else {
       const { id, name } = sourceOrTag;
-      return new StringSelectMenuOptionBuilder().setLabel(name).setValue(`${id}`);
+      return new StringSelectMenuOptionBuilder().setLabel(`[Tag] ${name}`).setValue(`${id}`);
     }
   });
 

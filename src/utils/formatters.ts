@@ -31,10 +31,12 @@ const formatSourceListToDescription = (list: (Source | Tag)[]): string => {
 
   Object.keys(byTypeSourceList).forEach((type) => {
     description += `**${type.toUpperCase()}**\n`;
-    byTypeSourceList[type].forEach((source) => {
+    byTypeSourceList[type].forEach((source, i) => {
       const { name, url } = source;
-      description += url ? `- ${name} (${url})\n` : `- ${name}\n`;
+      const isLast = i === byTypeSourceList[type].length - 1;
+      description += url ? `- ${name} (${url})\n` : name + `${isLast ? "" : ", "}`;
     });
+    description += "\n";
   });
 
   return description;
