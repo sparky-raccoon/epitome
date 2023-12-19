@@ -39,15 +39,19 @@ const getMessage = (
     case Message.HELP: {
       title += "Ici Epitome";
       description =
-        "Je suis un.e bot qui t’aidera à rester à jour vis à vis de sources " +
-        "d’information telles que des journaux, des blogs et certains réseaux sociaux à partir de leurs flux RSS. " +
-        "Il suffit de me dire quoi suivre, et je te retournerai les dernières publications " +
-        "dans le canal Discord où j’aurai été configuré.e.\n\n" +
+        "Je suis un.e bot qui t’aidera à rester à jour vis à vis de certaines sources " +
+        "d’information à partir de leurs flux RSS - d'autres modes de suivi seront supportés à l'avenir. " +
+        "Chaque salon de ton serveur Discord dispose de sa propre configuration et peut se voir associer " +
+        "des sources différentes. Les publications relatives à ces sources peuvent être filtrées " +
+        "à partir d'une liste de tags choisis. Ainsi, une même source peut être suivie dans plusieurs " +
+        "serveurs pour des raisons différentes. \n\n" +
         "Voici la liste des commandes auxquelles je réponds :\n" +
-        `▪︎ ${bold("/add <url>")} - pour suivre une nouvelle source de publications.\n` +
-        `▪︎ ${bold("/delete")} - pour supprimer une source de publications suivie.\n` +
+        `▪︎ ${bold("/add <url>")} - pour ajouter une nouvelle source au salon présent.\n` +
+        `▪︎ ${bold("/filter <name>")} - pour ajouter un nouveau tag / filtre au salon présent.\n` +
+        `▪︎ ${bold("/delete")} - pour supprimer une source ou un tag associé au salon présent.\n` +
         `▪︎ ${bold("/cancel")} - pour annuler une procédure d’ajout ou de suppression en cours.\n` +
-        `▪︎ ${bold("/list")} - pour lister l’ensemble des sources suivies.\n` +
+        `▪︎ ${bold("/list")} ` +
+        `- pour lister l’ensemble des sources & tags associés à ce salon.\n` +
         `▪︎ ${bold("/help")} - pour te rappeler qui je suis, et ce que je sais faire.`;
       break;
     }
@@ -65,47 +69,43 @@ const getMessage = (
     }
     case Message.LIST: {
       if (!isSourceList(data)) throw new Error("Invalid data type.");
-      title += "Liste des sources de publications suivies";
-      if (data.length === 0)
-        description = "Aucune source de publications n'a été configurée dans ce channel.";
+      title += "Liste des sources suivies & tags configurés";
+      if (data.length === 0) description = "Aucune confguration connue pour ce salon.";
       else description = formatSourceListToDescription(data);
       break;
     }
     case Message.ADD_CONFIRM: {
       if (!isSourceCreation(data)) throw new Error("Invalid data type.");
-      title += "Ajout d’une source de publications";
+      title += "Ajout d’une source d'information";
       description =
-        "Vous êtes sur le point d’ajouter la source de publications suivante :\n" +
-        formatSourceToBlockQuote(data);
+        "Tu sur le point d’ajouter la source suivante :\n" + formatSourceToBlockQuote(data);
       component = confirmOrCancelButton();
       break;
     }
     case Message.ADD_SUCCESS: {
-      title += "Ajout de la source effective";
-      description = `Vous retrouverez celle-ci parmi la liste des sources précédemment configurées avec la commande ${bold(
-        "/list"
-      )}.`;
+      title += "Ajout de la source d'information effective";
+      description =
+        `Tu retrouveras celle-ci parmi la liste des sources ` +
+        `précédemment configurées pour ce salon avec la commande \`/list\``;
       break;
     }
     case Message.ADD_ALREADY_EXISTS: {
       if (!isSource(data)) throw new Error("Invalid data type.");
-      title += "Ajout d’une source de publications";
+      title += "Ajout d’une source d'information";
       description =
-        "Il semblerait que cette source de publications soit déjà suivie :\n" +
-        formatSourceToBlockQuote(data);
+        "Il semblerait que cette source soit déjà suivie :\n" + formatSourceToBlockQuote(data);
       break;
     }
     case Message.DELETE_SELECT: {
       if (!isSourceList(data)) throw new Error("Invalid data type.");
-      title += "Suppression d’une source de publications suivie";
-      description =
-        "Sélectionne la source de publications que tu souhaites supprimer dans la liste ci-dessous :";
+      title += "Suppression d’une source d'information suivie";
+      description = "Sélectionne la source que tu souhaites supprimer dans la liste ci-dessous :";
       component = selectSavedSourcesMenu(data);
       break;
     }
     case Message.DELETE_CONFIRM: {
       if (!isSource(data)) throw new Error("Invalid data type.");
-      title += "Suppression d’une source de publiciations suivie";
+      title += "Suppression d’une source d'information suivie";
       description =
         "La source de publications suivante est sur le point d'être supprimée :\n" +
         formatSourceToBlockQuote(data);
@@ -113,8 +113,10 @@ const getMessage = (
       break;
     }
     case Message.DELETE_SUCCESS: {
-      title += "Suppression de la source effective";
-      description = `Tu ne seras plus notifié.e des dernières publications associées à celle-ci. Pour retrouver la liste des sources de publication présentement configurées, appelez la commande \`/list\``;
+      title += "Suppression de la source d'information effective";
+      description =
+        `Tu ne seras plus notifié.e des dernières publications associées à celle-ci. ` +
+        `Pour retrouver la liste des sources de publication présentement configurées, appelle la commande \`/list\``;
       break;
     }
     case Message.DELETE_NO_SAVED_SOURCES: {
