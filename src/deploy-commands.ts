@@ -10,20 +10,26 @@ if (!token || !clientId) throw new Error("Missing environment variables");
 
 const commands = [
   new SlashCommandBuilder()
-    .setName(Command.ADD)
-    .setDescription("Suivre une nouvelle source de publications.")
+    .setName(Command.ADD_SOURCE)
+    .setDescription("Ajouter une nouvelle source d'information à un salon donné.")
     .addStringOption((option) =>
       option.setName("url").setDescription("Url de la source à ajouter").setRequired(true)
     ),
   new SlashCommandBuilder()
+    .setName(Command.ADD_FILTER)
+    .setDescription("Ajouter un nouveau tag / filtre à un salon donné.")
+    .addStringOption((option) =>
+      option.setName("name").setDescription("Nom du tag à ajouter").setRequired(true)
+    ),
+  new SlashCommandBuilder()
     .setName(Command.DELETE)
-    .setDescription("Supprimer une source de publications suivie."),
+    .setDescription("Supprimer une source suivie ou un tag / filtre configuré."),
   new SlashCommandBuilder()
     .setName(Command.CANCEL)
-    .setDescription("Annuler une procédure d’ajout ou de suppression de source en cours."),
+    .setDescription("Annuler une procédure d’ajout ou de suppression en cours."),
   new SlashCommandBuilder()
     .setName(Command.LIST)
-    .setDescription("Lister l’ensemble des sources suivies."),
+    .setDescription("Lister l’ensemble des sources et tags associés à un salon."),
   new SlashCommandBuilder()
     .setName(Command.HELP)
     .setDescription("Afficher la liste des commandes."),

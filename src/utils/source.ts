@@ -1,8 +1,27 @@
 import { open, close, readFile, writeFile } from "fs";
 import * as path from "path";
 import Parser from "rss-parser";
-import { Source, SourceList, SourceTrackingData } from "@/utils/types";
 import { SourceType } from "@/utils/constants";
+
+type SourceId = string;
+
+type SourceList = {
+  [type in SourceType]?: {
+    [id: SourceId]: SourceTrackingData;
+  };
+};
+
+interface SourceTrackingData {
+  name: string;
+  url: string;
+  feed?: string;
+  timestamp: string;
+}
+
+interface Source extends Omit<SourceTrackingData, "timestamp"> {
+  id: SourceId;
+  type: SourceType;
+}
 
 const DATA_FILE_PATH = path.resolve(__dirname, "../../sources.json");
 

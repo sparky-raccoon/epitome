@@ -1,16 +1,19 @@
 import { ChatInputCommandInteraction, ComponentType, Message as DiscordMessage } from "discord.js";
-import { v4 as uuidv4 } from "uuid";
-import { Command, Message, SourceType, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
+import { Command, Message, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
 import {
-  addSource,
-  deleteSource,
-  listSources,
   findDuplicateSourceWithUrl,
+  findDuplicateTagWithName,
   getRssNameFromUrl,
-} from "@/utils/source";
+  addSource,
+  addTag,
+  deleteSource,
+  listEverything,
+  deleteTag,
+} from "@/bdd/operator";
 import { getMessage } from "@/utils/messages";
-import { Source } from "@/utils/types";
-import logger from "./logger";
+import { SourceCreation } from "@/bdd/models/source";
+import logger from "@/utils/logger";
+import { isSource, isTag } from "./types";
 
 const TIMEOUT = 60000;
 
@@ -23,8 +26,11 @@ class Process {
     this.terminate = terminate;
 
     switch (this.interaction.commandName) {
-      case Command.ADD:
-        this.add();
+      case Command.ADD_SOURCE:
+        this.addSource();
+        break;
+      case Command.ADD_FILTER:
+        this.addFilter();
         break;
       case Command.DELETE:
         this.delete();
@@ -35,14 +41,15 @@ class Process {
     }
   }
 
-  async add() {
+  async addSource() {
     try {
       await this.interaction.deferReply();
 
+      const { guildId, channelId } = this.interaction;
       const url = this.interaction.options.getString("url");
-      if (!url) throw new Error(INTERNAL_ERROR);
+      if (!guildId || !channelId || !url) throw new Error(INTERNAL_ERROR);
 
-      const duplicateSource = await findDuplicateSourceWithUrl(url);
+      const duplicateSource = await findDuplicateSourceWithUrl(channelId, url);
       if (duplicateSource) {
         const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicateSource);
         await this.interaction.editReply(message);
@@ -50,9 +57,8 @@ class Process {
         return;
       }
 
-      const type = SourceType.RSS;
       const name = await getRssNameFromUrl(url);
-      const source: Source = { id: uuidv4(), type, name, url };
+      const source: SourceCreation = { name, url };
 
       let message = getMessage(Message.ADD_CONFIRM, source);
       const response = await this.interaction.editReply(message);
@@ -62,8 +68,44 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        await addSource(source);
-        message = getMessage(Message.ADD_SUCCESS, source);
+        await addSource(guildId, channelId, source);
+        message = getMessage(Message.ADD_SUCCESS_SOURCE, source);
+        await confirmInteraction.update(message);
+      } else this.cancel(this.interaction);
+
+      this.terminate(this.interaction.user.id);
+    } catch (err) {
+      if (err instanceof Error) this.error(err.message);
+      else if (typeof err === "string") this.error(err);
+    }
+  }
+
+  async addFilter() {
+    try {
+      await this.interaction.deferReply();
+
+      const { guildId, channelId } = this.interaction;
+      const name = this.interaction.options.getString("name");
+      if (!guildId || !channelId || !name) throw new Error(INTERNAL_ERROR);
+
+      const duplicateTag = await findDuplicateTagWithName(channelId, name);
+      if (duplicateTag) {
+        const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicateTag);
+        await this.interaction.editReply(message);
+        this.terminate(this.interaction.user.id);
+        return;
+      }
+
+      let message = getMessage(Message.ADD_CONFIRM, { name });
+      const response = await this.interaction.editReply(message);
+      const confirmInteraction = await response.awaitMessageComponent({
+        time: TIMEOUT,
+        componentType: ComponentType.Button,
+      });
+
+      if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
+        await addTag(guildId, channelId, name);
+        message = getMessage(Message.ADD_SUCCESS_TAG, name);
         await confirmInteraction.update(message);
       } else this.cancel(this.interaction);
 
@@ -78,35 +120,32 @@ class Process {
     try {
       await this.interaction.deferReply();
 
-      let message;
-      const sourceList = await listSources();
+      const { guildId, channelId } = this.interaction;
+      if (!guildId || !channelId) throw new Error(INTERNAL_ERROR);
 
-      if (Object.keys(sourceList).length === 0) {
-        message = getMessage(Message.DELETE_NO_SAVED_SOURCES);
+      let message;
+      const fullList = await listEverything(channelId);
+
+      if (fullList.length === 0) {
+        message = getMessage(Message.DELETE_NOTHING_SAVED);
         await this.interaction.editReply(message);
         this.terminate(this.interaction.user.id);
         return;
       }
 
-      message = getMessage(Message.DELETE_SELECT, sourceList);
+      message = getMessage(Message.DELETE_SELECT, fullList);
 
       let response = await this.interaction.editReply(message);
       const selectInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
         componentType: ComponentType.StringSelect,
       });
-      const selectedValue = selectInteraction.values[0];
-      const [type, id] = selectedValue.split("|");
-      const selectedIncompleteSource = sourceList[type as SourceType]?.[id];
+      const selectedId = parseInt(selectInteraction.values[0]);
+      const selectedSourceOrTag = fullList.find((sourceOrTag) => sourceOrTag.id === selectedId);
 
-      if (!selectedIncompleteSource) throw new Error(INTERNAL_ERROR);
+      if (!selectedSourceOrTag) throw new Error(INTERNAL_ERROR);
 
-      const source = {
-        ...selectedIncompleteSource,
-        id,
-        type: type as SourceType,
-      };
-      message = getMessage(Message.DELETE_CONFIRM, source);
+      message = getMessage(Message.DELETE_CONFIRM, selectedSourceOrTag);
       response = (await selectInteraction.update(message)) as unknown as DiscordMessage;
 
       const confirmInteraction = await response.awaitMessageComponent({
@@ -115,8 +154,13 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        await deleteSource(id, type as SourceType);
-        message = getMessage(Message.DELETE_SUCCESS, source);
+        if (isSource(selectedSourceOrTag)) {
+          await deleteSource(guildId, channelId, selectedSourceOrTag.id);
+          message = getMessage(Message.DELETE_SUCCESS_SOURCE, selectedSourceOrTag);
+        } else if (isTag(selectedSourceOrTag)) {
+          await deleteTag(guildId, channelId, selectedSourceOrTag.name);
+          message = getMessage(Message.DELETE_SUCCESS_TAG, selectedSourceOrTag);
+        }
         await confirmInteraction.update(message);
       } else this.cancel(this.interaction);
 
@@ -129,10 +173,13 @@ class Process {
 
   async list() {
     try {
+      const { guildId, channelId } = this.interaction;
+      if (!guildId || !channelId) throw new Error(INTERNAL_ERROR);
+
       await this.interaction.deferReply();
 
-      const sourceList = await listSources();
-      const message = getMessage(Message.LIST, sourceList);
+      const list = await listEverything(channelId);
+      const message = getMessage(Message.LIST, list);
       this.interaction.editReply(message);
 
       this.terminate(this.interaction.user.id);

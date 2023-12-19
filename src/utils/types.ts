@@ -1,27 +1,8 @@
-import { SourceType } from "./constants";
-
-type SourceId = string;
-
-type SourceList = {
-  [type in SourceType]?: {
-    [id: SourceId]: SourceTrackingData;
-  };
-};
-
-interface SourceTrackingData {
-  name: string;
-  url: string;
-  feed?: string;
-  timestamp: string;
-}
-
-interface Source extends Omit<SourceTrackingData, "timestamp"> {
-  id: SourceId;
-  type: SourceType;
-}
+import { Source, SourceCreation } from "@/bdd/models/source";
+import { Tag, TagCreation } from "@/bdd/models/tag";
 
 interface Publication {
-  type: SourceType;
+  type: string;
   name: string;
   title: string;
   link: string;
@@ -31,4 +12,79 @@ interface Publication {
   author?: string;
 }
 
-export { SourceList, Source, SourceTrackingData, Publication };
+const isPublication = (publication: unknown): publication is Publication => {
+  if (!publication || typeof publication !== "object") {
+    return false;
+  }
+
+  return (
+    publication &&
+    "type" in publication &&
+    "name" in publication &&
+    "title" in publication &&
+    "link" in publication &&
+    "contentSnippet" in publication &&
+    "date" in publication &&
+    "dateMs" in publication
+  );
+};
+
+const isSourceCreation = (sourceCreation: unknown): sourceCreation is SourceCreation => {
+  if (!sourceCreation || typeof sourceCreation !== "object") {
+    return false;
+  }
+
+  return sourceCreation && "name" in sourceCreation && "url" in sourceCreation;
+};
+
+const isSource = (source: unknown): source is Source => {
+  return isSourceCreation(source) && "id" in source;
+};
+
+const isSourceList = (sourceList: unknown): sourceList is Source[] => {
+  if (!sourceList || !Array.isArray(sourceList)) {
+    return false;
+  }
+
+  return sourceList.every(isSource);
+};
+
+const isTagCreation = (tagCreation: unknown): tagCreation is TagCreation => {
+  if (!tagCreation || typeof tagCreation !== "object") {
+    return false;
+  }
+
+  return tagCreation && "name" in tagCreation;
+};
+
+const isTag = (tag: unknown): tag is Tag => {
+  return isTagCreation(tag) && "id" in tag;
+};
+
+const isTagList = (tagList: unknown): tagList is Tag[] => {
+  if (!tagList || !Array.isArray(tagList)) {
+    return false;
+  }
+
+  return tagList.every(isTag);
+};
+
+const isSourceAndTagList = (sourceAndTagList: unknown): sourceAndTagList is (Source | Tag)[] => {
+  if (!sourceAndTagList || !Array.isArray(sourceAndTagList)) {
+    return false;
+  }
+
+  return sourceAndTagList.every((item) => isSource(item) || isTag(item));
+};
+
+export {
+  Publication,
+  isPublication,
+  isSource,
+  isSourceCreation,
+  isSourceList,
+  isTag,
+  isTagCreation,
+  isTagList,
+  isSourceAndTagList,
+};

@@ -1,51 +1,43 @@
 import { blockQuote } from "discord.js";
-import { SourceType } from "@/utils/constants";
-import { Source, SourceList } from "@/utils/types";
+import { Source, SourceCreation } from "@/bdd/models/source";
+import { Tag } from "@/bdd/models/tag";
+import { isSource, isTag } from "./types";
 
-const formatSourceTypeToReadable = (type: SourceType): string => {
-  switch (type) {
-    case SourceType.YOUTUBE:
-      return "YouTube";
-    case SourceType.INSTAGRAM:
-      return "Instagram";
-    case SourceType.TWITTER:
-      return "Twitter";
-    case SourceType.RSS:
-      return "RSS";
-  }
-};
-
-const formatSourceToBlockQuote = (source: Source): `>>> ${string}` => {
+const formatSourceToBlockQuote = (source: Source | SourceCreation): `>>> ${string}` => {
   const { type, name, url } = source;
 
   return blockQuote(
-    `Type : ${formatSourceTypeToReadable(type)}\n` + `Chaîne : ${name}\n` + `Url : ${url}`
+    `Type : ${type?.toUpperCase() || "RSS"} \n` + `Chaîne : ${name}\n` + `Url : ${url}`
   );
 };
 
-const formatSourceListToDescription = (list: SourceList): string => {
-  const fields = Object.keys(list).reduce((acc: string, type) => {
-    const typeName = formatSourceTypeToReadable(type as SourceType);
-    const sourcesByType = list[type as SourceType];
+const formatSourceListToDescription = (list: (Source | Tag)[]): string => {
+  let description = "";
+  type ByTypeSourceList = { [type: string]: { name: string; url: string }[] };
 
-    if (sourcesByType) {
-      const sourceNameAndUrls = [];
-      const sourceIds = Object.keys(sourcesByType);
+  const byTypeSourceList = list.reduce((acc: ByTypeSourceList, sourceOrTag) => {
+    if (isSource(sourceOrTag)) {
+      const { type, name, url } = sourceOrTag;
+      const formattedType = `Flux ${type?.toUpperCase() || "RSS"}`;
+      if (!acc[formattedType]) acc[formattedType] = [];
+      acc[formattedType].push({ name, url });
+    } else if (isTag(sourceOrTag)) {
+      if (!acc["Filtres"]) acc["Filtres"] = [];
+      acc["Filtres"].push({ name: sourceOrTag.name, url: "" });
+    }
 
-      if (sourceIds.length > 0) {
-        for (const sourceId of sourceIds) {
-          const source = sourcesByType[sourceId];
-          const { name, url } = source;
+    return acc;
+  }, {});
 
-          sourceNameAndUrls.push(`- [${name}](${url})`);
-        }
+  Object.keys(byTypeSourceList).forEach((type) => {
+    description += `**${type.toUpperCase()}**\n`;
+    byTypeSourceList[type].forEach((source) => {
+      const { name, url } = source;
+      description += url ? `- ${name} (${url})\n` : `- ${name}\n`;
+    });
+  });
 
-        return acc + `**${typeName}**\n` + sourceNameAndUrls.join("\n") + "\n\n";
-      } else return acc;
-    } else return acc;
-  }, "");
-
-  return fields;
+  return description;
 };
 
-export { formatSourceTypeToReadable, formatSourceToBlockQuote, formatSourceListToDescription };
+export { formatSourceToBlockQuote, formatSourceListToDescription };
