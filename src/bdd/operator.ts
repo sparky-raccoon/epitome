@@ -38,18 +38,23 @@ const addSource = async (
 
   const source = await Models.Source.findOne({ where: { url: newSource.url } });
   if (source) throw new Error("Cette source de publications existe déjà.");
-  else channel.createSource(newSource);
+  else await channel.createSource(newSource);
 };
 
 const deleteSource = async (
   guildId: string,
   channelId: string,
-  sourceId: string
+  sourceId: number
 ): Promise<void> => {
   const source = await Models.Source.findByPk(sourceId);
-  if (!source) throw new Error("Cette source de publications n'existe pas, ou plus.");
+  if (source) await source.destroy({ force: true });
 
-  await Models.Source.destroy({ where: { id: sourceId } });
+  const channelSources = await listChannelSources(channelId);
+  if (channelSources.length === 0)
+    Models.Channel.destroy({ force: true, where: { id: channelId } });
+
+  const guildChannels = await Models.Channel.findAll({ where: { guildId } });
+  if (guildChannels.length === 0) Models.Guild.destroy({ force: true, where: { id: guildId } });
 };
 
 const listChannelSources = async (channelId: string): Promise<Source[]> => {

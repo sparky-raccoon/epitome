@@ -10,7 +10,7 @@ import sequelize from "@/bdd/sequelize";
 import Channel from "@/bdd/models/channel";
 
 class Tag extends Model<InferAttributes<Tag>, InferCreationAttributes<Tag>> {
-  declare id: CreationOptional<string>;
+  declare id: CreationOptional<number>;
   declare channelId: ForeignKey<Channel["id"]>;
   declare name: string;
 }
@@ -18,7 +18,8 @@ class Tag extends Model<InferAttributes<Tag>, InferCreationAttributes<Tag>> {
 Tag.init(
   {
     id: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
       primaryKey: true,
     },
     channelId: {

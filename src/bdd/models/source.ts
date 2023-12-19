@@ -15,7 +15,7 @@ type SourceAttributes = Attributes<Source>;
 type SourceCreationAttributes = CreationAttributes<Source>;
 
 class Source extends Model<InferAttributes<Source>, InferCreationAttributes<Source>> {
-  declare id: CreationOptional<string>;
+  declare id: CreationOptional<number>;
   declare channelId: ForeignKey<Channel["id"]>;
   declare type: CreationOptional<string>;
   declare name: string;
@@ -25,7 +25,8 @@ class Source extends Model<InferAttributes<Source>, InferCreationAttributes<Sour
 Source.init(
   {
     id: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
       primaryKey: true,
     },
     channelId: {

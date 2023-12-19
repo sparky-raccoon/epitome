@@ -9,11 +9,8 @@ const selectSavedSourcesMenu = (
   savedSourceList: Source[]
 ): ActionRowBuilder<StringSelectMenuBuilder> => {
   const options = savedSourceList.map((source) => {
-    const { id, type, name, url } = source;
-    return new StringSelectMenuOptionBuilder()
-      .setLabel(name)
-      .setValue(`${type}|${id}`)
-      .setDescription(url);
+    const { id, name, url } = source;
+    return new StringSelectMenuOptionBuilder().setLabel(name).setValue(`${id}`).setDescription(url);
   });
 
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(

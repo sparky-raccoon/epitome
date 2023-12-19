@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, ComponentType, Message as DiscordMessage } from "discord.js";
-import { Command, Message, SourceType, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
+import { Command, Message, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
 import {
   findDuplicateSourceWithUrl,
   getRssNameFromUrl,
@@ -75,10 +75,10 @@ class Process {
 
   async delete() {
     try {
+      await this.interaction.deferReply();
+
       const { guildId, channelId } = this.interaction;
       if (!guildId || !channelId) throw new Error(INTERNAL_ERROR);
-
-      await this.interaction.deferReply();
 
       let message;
       const sourceList = await listChannelSources(channelId);
@@ -97,18 +97,12 @@ class Process {
         time: TIMEOUT,
         componentType: ComponentType.StringSelect,
       });
-      const selectedValue = selectInteraction.values[0];
-      const [type, id] = selectedValue.split("|");
-      const selectedIncompleteSource = sourceList.find((source) => source.id === id);
+      const selectedId = parseInt(selectInteraction.values[0]);
+      const selectedSource = sourceList.find((source) => source.id === selectedId);
 
-      if (!selectedIncompleteSource) throw new Error(INTERNAL_ERROR);
+      if (!selectedSource) throw new Error(INTERNAL_ERROR);
 
-      const source = {
-        ...selectedIncompleteSource,
-        id,
-        type: type as SourceType,
-      };
-      message = getMessage(Message.DELETE_CONFIRM, source);
+      message = getMessage(Message.DELETE_CONFIRM, selectedSource);
       response = (await selectInteraction.update(message)) as unknown as DiscordMessage;
 
       const confirmInteraction = await response.awaitMessageComponent({
@@ -117,8 +111,8 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        await deleteSource(guildId, channelId, id);
-        message = getMessage(Message.DELETE_SUCCESS, source);
+        await deleteSource(guildId, channelId, selectedSource.id);
+        message = getMessage(Message.DELETE_SUCCESS, selectedSource);
         await confirmInteraction.update(message);
       } else this.cancel(this.interaction);
 
