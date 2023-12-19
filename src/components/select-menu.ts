@@ -4,13 +4,23 @@ import {
   StringSelectMenuOptionBuilder,
 } from "discord.js";
 import { Source } from "@/bdd/models/source";
+import { Tag } from "@/bdd/models/tag";
+import { isSource } from "@/utils/types";
 
-const selectSavedSourcesMenu = (
-  savedSourceList: Source[]
+const selectSavedSourcesOrTagsMenu = (
+  list: (Source | Tag)[]
 ): ActionRowBuilder<StringSelectMenuBuilder> => {
-  const options = savedSourceList.map((source) => {
-    const { id, name, url } = source;
-    return new StringSelectMenuOptionBuilder().setLabel(name).setValue(`${id}`).setDescription(url);
+  const options = list.map((sourceOrTag) => {
+    if (isSource(sourceOrTag)) {
+      const { id, name, url } = sourceOrTag;
+      return new StringSelectMenuOptionBuilder()
+        .setLabel(name)
+        .setValue(`${id}`)
+        .setDescription(url);
+    } else {
+      const { id, name } = sourceOrTag;
+      return new StringSelectMenuOptionBuilder().setLabel(name).setValue(`${id}`);
+    }
   });
 
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
@@ -18,4 +28,4 @@ const selectSavedSourcesMenu = (
   );
 };
 
-export { selectSavedSourcesMenu };
+export { selectSavedSourcesOrTagsMenu };

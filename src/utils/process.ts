@@ -2,14 +2,18 @@ import { ChatInputCommandInteraction, ComponentType, Message as DiscordMessage }
 import { Command, Message, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
 import {
   findDuplicateSourceWithUrl,
+  findDuplicateTagWithName,
   getRssNameFromUrl,
   addSource,
+  addTag,
   deleteSource,
-  listChannelSources,
+  listEverything,
+  deleteTag,
 } from "@/bdd/operator";
 import { getMessage } from "@/utils/messages";
 import { SourceCreation } from "@/bdd/models/source";
 import logger from "@/utils/logger";
+import { isSource, isTag } from "./types";
 
 const TIMEOUT = 60000;
 
@@ -22,8 +26,11 @@ class Process {
     this.terminate = terminate;
 
     switch (this.interaction.commandName) {
-      case Command.ADD:
-        this.add();
+      case Command.ADD_SOURCE:
+        this.addSource();
+        break;
+      case Command.ADD_FILTER:
+        this.addFilter();
         break;
       case Command.DELETE:
         this.delete();
@@ -34,7 +41,7 @@ class Process {
     }
   }
 
-  async add() {
+  async addSource() {
     try {
       await this.interaction.deferReply();
 
@@ -42,7 +49,7 @@ class Process {
       const url = this.interaction.options.getString("url");
       if (!guildId || !channelId || !url) throw new Error(INTERNAL_ERROR);
 
-      const duplicateSource = await findDuplicateSourceWithUrl(url);
+      const duplicateSource = await findDuplicateSourceWithUrl(channelId, url);
       if (duplicateSource) {
         const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicateSource);
         await this.interaction.editReply(message);
@@ -62,7 +69,43 @@ class Process {
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
         await addSource(guildId, channelId, source);
-        message = getMessage(Message.ADD_SUCCESS, source);
+        message = getMessage(Message.ADD_SUCCESS_SOURCE, source);
+        await confirmInteraction.update(message);
+      } else this.cancel(this.interaction);
+
+      this.terminate(this.interaction.user.id);
+    } catch (err) {
+      if (err instanceof Error) this.error(err.message);
+      else if (typeof err === "string") this.error(err);
+    }
+  }
+
+  async addFilter() {
+    try {
+      await this.interaction.deferReply();
+
+      const { guildId, channelId } = this.interaction;
+      const name = this.interaction.options.getString("name");
+      if (!guildId || !channelId || !name) throw new Error(INTERNAL_ERROR);
+
+      const duplicateTag = await findDuplicateTagWithName(channelId, name);
+      if (duplicateTag) {
+        const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicateTag);
+        await this.interaction.editReply(message);
+        this.terminate(this.interaction.user.id);
+        return;
+      }
+
+      let message = getMessage(Message.ADD_CONFIRM, { name });
+      const response = await this.interaction.editReply(message);
+      const confirmInteraction = await response.awaitMessageComponent({
+        time: TIMEOUT,
+        componentType: ComponentType.Button,
+      });
+
+      if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
+        await addTag(guildId, channelId, name);
+        message = getMessage(Message.ADD_SUCCESS_TAG, name);
         await confirmInteraction.update(message);
       } else this.cancel(this.interaction);
 
@@ -81,16 +124,16 @@ class Process {
       if (!guildId || !channelId) throw new Error(INTERNAL_ERROR);
 
       let message;
-      const sourceList = await listChannelSources(channelId);
+      const fullList = await listEverything(channelId);
 
-      if (sourceList.length === 0) {
-        message = getMessage(Message.DELETE_NO_SAVED_SOURCES);
+      if (fullList.length === 0) {
+        message = getMessage(Message.DELETE_NOTHING_SAVED);
         await this.interaction.editReply(message);
         this.terminate(this.interaction.user.id);
         return;
       }
 
-      message = getMessage(Message.DELETE_SELECT, sourceList);
+      message = getMessage(Message.DELETE_SELECT, fullList);
 
       let response = await this.interaction.editReply(message);
       const selectInteraction = await response.awaitMessageComponent({
@@ -98,11 +141,11 @@ class Process {
         componentType: ComponentType.StringSelect,
       });
       const selectedId = parseInt(selectInteraction.values[0]);
-      const selectedSource = sourceList.find((source) => source.id === selectedId);
+      const selectedSourceOrTag = fullList.find((sourceOrTag) => sourceOrTag.id === selectedId);
 
-      if (!selectedSource) throw new Error(INTERNAL_ERROR);
+      if (!selectedSourceOrTag) throw new Error(INTERNAL_ERROR);
 
-      message = getMessage(Message.DELETE_CONFIRM, selectedSource);
+      message = getMessage(Message.DELETE_CONFIRM, selectedSourceOrTag);
       response = (await selectInteraction.update(message)) as unknown as DiscordMessage;
 
       const confirmInteraction = await response.awaitMessageComponent({
@@ -111,8 +154,13 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        await deleteSource(guildId, channelId, selectedSource.id);
-        message = getMessage(Message.DELETE_SUCCESS, selectedSource);
+        if (isSource(selectedSourceOrTag)) {
+          await deleteSource(guildId, channelId, selectedSourceOrTag.id);
+          message = getMessage(Message.DELETE_SUCCESS_SOURCE, selectedSourceOrTag);
+        } else if (isTag(selectedSourceOrTag)) {
+          await deleteTag(guildId, channelId, selectedSourceOrTag.name);
+          message = getMessage(Message.DELETE_SUCCESS_TAG, selectedSourceOrTag);
+        }
         await confirmInteraction.update(message);
       } else this.cancel(this.interaction);
 
@@ -130,8 +178,8 @@ class Process {
 
       await this.interaction.deferReply();
 
-      const sourceList = await listChannelSources(channelId);
-      const message = getMessage(Message.LIST, sourceList);
+      const list = await listEverything(channelId);
+      const message = getMessage(Message.LIST, list);
       this.interaction.editReply(message);
 
       this.terminate(this.interaction.user.id);

@@ -40,11 +40,13 @@ const parseRssFeeds = async (channelId: string): Promise<Publication[]> => {
 
           if (
             tagList.length === 0 ||
-            tagList.some(
-              (keyword) =>
-                title.toLowerCase().includes(keyword) ||
-                contentSnippet.toLowerCase().includes(keyword)
-            )
+            tagList
+              .map((t) => t.name)
+              .some(
+                (keyword) =>
+                  title.toLowerCase().includes(keyword) ||
+                  contentSnippet.toLowerCase().includes(keyword)
+              )
           ) {
             publications.push({
               type,

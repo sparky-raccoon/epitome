@@ -1,6 +1,7 @@
 import { Sequelize } from "sequelize";
 import Parser from "rss-parser";
 import sequelize from "@/bdd/sequelize";
+import { Tag } from "@/bdd/models/tag";
 import { Source, SourceCreation } from "@/bdd/models/source";
 import Models from "@/bdd/models/index";
 import logger from "@/utils/logger";
@@ -13,16 +14,17 @@ const initDatabase = async (): Promise<Sequelize> => {
   return sequelize;
 };
 
-const addTag = async (channelId: string, name: string): Promise<void> => {
-  const existingTag = await Models.Tag.findOne({ where: { channelId, name } });
-  if (existingTag) throw new Error("Ce tag existe déjà.");
-
-  await Models.Tag.create({ channelId, name });
+const findDuplicateSourceWithUrl = async (
+  channelId: string,
+  url: string
+): Promise<Source | null> => {
+  const source = await Models.Source.findOne({ where: { channelId, url } });
+  return source ? source.toJSON() : null;
 };
 
-const findDuplicateSourceWithUrl = async (url: string): Promise<Source | null> => {
-  const source = await Models.Source.findOne({ where: { url } });
-  return source ? source.toJSON() : null;
+const findDuplicateTagWithName = async (channelId: string, name: string): Promise<string> => {
+  const tag = await Models.Tag.findOne({ where: { channelId, name } });
+  return tag ? tag.name : "";
 };
 
 const addSource = async (
@@ -41,6 +43,18 @@ const addSource = async (
   else await channel.createSource(newSource);
 };
 
+const addTag = async (guildId: string, channelId: string, name: string): Promise<void> => {
+  let guild = await Models.Guild.findByPk(guildId);
+  if (!guild) guild = await Models.Guild.create({ id: guildId });
+
+  let channel = await Models.Channel.findByPk(channelId);
+  if (!channel) channel = await guild.createChannel({ id: channelId });
+
+  const tag = await Models.Tag.findOne({ where: { name } });
+  if (tag) throw new Error("Ce filtre existe déjà.");
+  else await channel.createTag({ name });
+};
+
 const deleteSource = async (
   guildId: string,
   channelId: string,
@@ -57,6 +71,17 @@ const deleteSource = async (
   if (guildChannels.length === 0) Models.Guild.destroy({ force: true, where: { id: guildId } });
 };
 
+const deleteTag = async (guildId: string, channelId: string, name: string): Promise<void> => {
+  const tag = await Models.Tag.findOne({ where: { name } });
+  if (tag) await tag.destroy({ force: true });
+
+  const channelTags = await listChannelTags(channelId);
+  if (channelTags.length === 0) Models.Channel.destroy({ force: true, where: { id: channelId } });
+
+  const guildChannels = await Models.Channel.findAll({ where: { guildId } });
+  if (guildChannels.length === 0) Models.Guild.destroy({ force: true, where: { id: guildId } });
+};
+
 const listChannelIds = async (): Promise<string[]> => {
   const channels = await Models.Channel.findAll();
   return channels.map((c) => c.id);
@@ -67,9 +92,15 @@ const listChannelSources = async (channelId: string): Promise<Source[]> => {
   return sources;
 };
 
-const listChannelTags = async (channelId: string): Promise<string[]> => {
+const listChannelTags = async (channelId: string): Promise<Tag[]> => {
   const tags = await Models.Tag.findAll({ where: { channelId }, attributes: ["name"] });
-  return tags.map((t) => t.name);
+  return tags;
+};
+
+const listEverything = async (channelId: string): Promise<(Source | Tag)[]> => {
+  const sources = await listChannelSources(channelId);
+  const tags = await listChannelTags(channelId);
+  return [...sources, ...tags];
 };
 
 const updateSourceTimestamp = async (sourrceId: number, timestamp: string): Promise<void> => {
@@ -84,13 +115,16 @@ const getRssNameFromUrl = async (url: string): Promise<string> => {
 
 export {
   initDatabase,
-  addTag,
   findDuplicateSourceWithUrl,
+  findDuplicateTagWithName,
   addSource,
+  addTag,
   deleteSource,
+  deleteTag,
   listChannelIds,
   listChannelSources,
   listChannelTags,
+  listEverything,
   updateSourceTimestamp,
   getRssNameFromUrl,
 };

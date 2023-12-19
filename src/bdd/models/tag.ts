@@ -5,9 +5,14 @@ import {
   CreationOptional,
   DataTypes,
   ForeignKey,
+  Attributes,
+  CreationAttributes,
 } from "sequelize";
 import sequelize from "@/bdd/sequelize";
 import Channel from "@/bdd/models/channel";
+
+type TagAttributes = Attributes<Tag>;
+type TagCreationAttributes = CreationAttributes<Tag>;
 
 class Tag extends Model<InferAttributes<Tag>, InferCreationAttributes<Tag>> {
   declare id: CreationOptional<number>;
@@ -38,4 +43,6 @@ Tag.init(
   }
 );
 
+export { TagAttributes as Tag };
+export { TagCreationAttributes as TagCreation };
 export default Tag;

@@ -1,16 +1,19 @@
 import { ColorResolvable, EmbedBuilder, bold } from "discord.js";
 import { Message } from "@/utils/constants";
 import { Source, SourceCreation } from "@/bdd/models/source";
+import { Tag, TagCreation } from "@/bdd/models/tag";
 import {
   Publication,
   isPublication,
   isSource,
   isSourceCreation,
-  isSourceList,
+  isTag,
+  isTagCreation,
+  isSourceAndTagList,
 } from "@/utils/types";
 import { formatSourceListToDescription, formatSourceToBlockQuote } from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
-import { selectSavedSourcesMenu } from "@/components/select-menu";
+import { selectSavedSourcesOrTagsMenu } from "@/components/select-menu";
 
 const getColorForSourceType = (sourceType: string): ColorResolvable => {
   switch (sourceType) {
@@ -25,10 +28,24 @@ const getColorForSourceType = (sourceType: string): ColorResolvable => {
   }
 };
 
-const getMessage = (
-  type: Message,
-  data?: Source | SourceCreation | Source[] | string | Publication
-) => {
+type Error = string;
+type MessageData =
+  | Source
+  | SourceCreation
+  | Source[]
+  | Tag
+  | TagCreation
+  | Tag[]
+  | Publication
+  | Error;
+
+const ADD_SOURCE_TITLE = "Ajout d’une source d'information";
+const ADD_TAG_TITLE = "Ajout d’un tag / filtre";
+const DELETE_SOURCE_TITLE = "Suppression d'une source ou d'un tag / filtre configuré";
+const DELETE_TAG_TITLE = "Suppression d’un tag / filtre configuré";
+const DELETE_SOURCE_OR_TAG_TITLE = "Suppression d’une source ou d’un tag / filtre configuré";
+
+const getMessage = (type: Message, data?: MessageData) => {
   let color: ColorResolvable = "#ffffff";
   let title = "✸ ";
   let description = "";
@@ -46,8 +63,9 @@ const getMessage = (
         "à partir d'une liste de tags choisis. Ainsi, une même source peut être suivie dans plusieurs " +
         "serveurs pour des raisons différentes. \n\n" +
         "Voici la liste des commandes auxquelles je réponds :\n" +
-        `▪︎ ${bold("/add <url>")} - pour ajouter une nouvelle source au salon présent.\n` +
-        `▪︎ ${bold("/filter <name>")} - pour ajouter un nouveau tag / filtre au salon présent.\n` +
+        `▪︎ ${bold("/add-source <url>")} - pour ajouter une nouvelle source au salon présent.\n` +
+        `▪︎ ${bold("/add-filter <name>")} ` +
+        `- pour ajouter un nouveau tag / filtre au salon présent.\n` +
         `▪︎ ${bold("/delete")} - pour supprimer une source ou un tag associé au salon présent.\n` +
         `▪︎ ${bold("/cancel")} - pour annuler une procédure d’ajout ou de suppression en cours.\n` +
         `▪︎ ${bold("/list")} ` +
@@ -68,60 +86,86 @@ const getMessage = (
       break;
     }
     case Message.LIST: {
-      if (!isSourceList(data)) throw new Error("Invalid data type.");
+      if (!isSourceAndTagList(data)) throw new Error("Invalid data type.");
       title += "Liste des sources suivies & tags configurés";
-      if (data.length === 0) description = "Aucune confguration connue pour ce salon.";
+      if (data.length === 0) description = "Aucune configuration connue pour ce salon.";
       else description = formatSourceListToDescription(data);
       break;
     }
     case Message.ADD_CONFIRM: {
-      if (!isSourceCreation(data)) throw new Error("Invalid data type.");
-      title += "Ajout d’une source d'information";
-      description =
-        "Tu sur le point d’ajouter la source suivante :\n" + formatSourceToBlockQuote(data);
+      if (isSourceCreation(data)) {
+        title += ADD_SOURCE_TITLE;
+        description =
+          "Tu sur le point d’ajouter la source suivante :\n" + formatSourceToBlockQuote(data);
+      } else if (isTagCreation(data)) {
+        title += ADD_TAG_TITLE;
+        description = `Tu es sur le point d’ajouter le tag suivant : ${bold(data.name)}`;
+      } else throw new Error("Invalid data type.");
       component = confirmOrCancelButton();
       break;
     }
-    case Message.ADD_SUCCESS: {
-      title += "Ajout de la source d'information effective";
+    case Message.ADD_SUCCESS_SOURCE: {
+      title += ADD_SOURCE_TITLE + " effectif";
       description =
         `Tu retrouveras celle-ci parmi la liste des sources ` +
         `précédemment configurées pour ce salon avec la commande \`/list\``;
       break;
     }
-    case Message.ADD_ALREADY_EXISTS: {
-      if (!isSource(data)) throw new Error("Invalid data type.");
-      title += "Ajout d’une source d'information";
+    case Message.ADD_SUCCESS_TAG: {
+      title += ADD_TAG_TITLE + " effectif";
       description =
-        "Il semblerait que cette source soit déjà suivie :\n" + formatSourceToBlockQuote(data);
+        `Tu retrouveras celui-ci parmi la liste des tags ` +
+        `précédemment configurés pour ce salon avec la commande \`/list\``;
+      break;
+    }
+    case Message.ADD_ALREADY_EXISTS: {
+      if (isSourceCreation(data)) {
+        title += ADD_SOURCE_TITLE;
+        description =
+          "Il semblerait que cette source soit déjà suivie :\n" + formatSourceToBlockQuote(data);
+      } else if (isTagCreation(data)) {
+        title += ADD_TAG_TITLE;
+        description = `Il semblerait que ce tag soit déjà configuré : ${bold(data.name)}`;
+      } else throw new Error("Invalid data type.");
       break;
     }
     case Message.DELETE_SELECT: {
-      if (!isSourceList(data)) throw new Error("Invalid data type.");
-      title += "Suppression d’une source d'information suivie";
+      if (!isSourceAndTagList(data)) throw new Error("Invalid data type.");
+      title += DELETE_SOURCE_OR_TAG_TITLE;
       description = "Sélectionne la source que tu souhaites supprimer dans la liste ci-dessous :";
-      component = selectSavedSourcesMenu(data);
+      component = selectSavedSourcesOrTagsMenu(data);
       break;
     }
     case Message.DELETE_CONFIRM: {
-      if (!isSource(data)) throw new Error("Invalid data type.");
-      title += "Suppression d’une source d'information suivie";
-      description =
-        "La source de publications suivante est sur le point d'être supprimée :\n" +
-        formatSourceToBlockQuote(data);
+      if (isSource(data)) {
+        title += DELETE_SOURCE_TITLE;
+        description =
+          "La source de publications suivante est sur le point d'être supprimée :\n" +
+          formatSourceToBlockQuote(data);
+      } else if (isTag(data)) {
+        title += DELETE_TAG_TITLE;
+        description = `Le tag suivant est sur le point d'être supprimé : ${bold(data.name)}`;
+      } else throw new Error("Invalid data type.");
       component = confirmOrCancelButton();
       break;
     }
-    case Message.DELETE_SUCCESS: {
-      title += "Suppression de la source d'information effective";
+    case Message.DELETE_SUCCESS_SOURCE: {
+      title += DELETE_SOURCE_TITLE + " effective";
       description =
         `Tu ne seras plus notifié.e des dernières publications associées à celle-ci. ` +
         `Pour retrouver la liste des sources de publication présentement configurées, appelle la commande \`/list\``;
       break;
     }
-    case Message.DELETE_NO_SAVED_SOURCES: {
-      title += "Suppression d’une source de publications suivie";
-      description = "Aucune source de publications n'a été configurée.";
+    case Message.DELETE_SUCCESS_TAG: {
+      title += DELETE_TAG_TITLE + " effective";
+      description =
+        `Les publications ne seront plus filtrées selon ce tag. ` +
+        `Pour retrouver la liste des tags présentement configurés, appelle la commande \`/list\``;
+      break;
+    }
+    case Message.DELETE_NOTHING_SAVED: {
+      title += DELETE_SOURCE_OR_TAG_TITLE;
+      description = "Aucune source ou tag n'a été configuré pour ce salon.";
       break;
     }
     case Message.CANCEL: {

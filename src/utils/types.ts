@@ -1,4 +1,5 @@
 import { Source, SourceCreation } from "@/bdd/models/source";
+import { Tag, TagCreation } from "@/bdd/models/tag";
 
 interface Publication {
   type: string;
@@ -48,4 +49,42 @@ const isSourceList = (sourceList: unknown): sourceList is Source[] => {
   return sourceList.every(isSource);
 };
 
-export { Publication, isPublication, isSource, isSourceCreation, isSourceList };
+const isTagCreation = (tagCreation: unknown): tagCreation is TagCreation => {
+  if (!tagCreation || typeof tagCreation !== "object") {
+    return false;
+  }
+
+  return tagCreation && "name" in tagCreation;
+};
+
+const isTag = (tag: unknown): tag is Tag => {
+  return isTagCreation(tag) && "id" in tag;
+};
+
+const isTagList = (tagList: unknown): tagList is Tag[] => {
+  if (!tagList || !Array.isArray(tagList)) {
+    return false;
+  }
+
+  return tagList.every(isTag);
+};
+
+const isSourceAndTagList = (sourceAndTagList: unknown): sourceAndTagList is (Source | Tag)[] => {
+  if (!sourceAndTagList || !Array.isArray(sourceAndTagList)) {
+    return false;
+  }
+
+  return sourceAndTagList.every((item) => isSource(item) || isTag(item));
+};
+
+export {
+  Publication,
+  isPublication,
+  isSource,
+  isSourceCreation,
+  isSourceList,
+  isTag,
+  isTagCreation,
+  isTagList,
+  isSourceAndTagList,
+};
