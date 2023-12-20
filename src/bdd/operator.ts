@@ -1,7 +1,7 @@
 import { Sequelize } from "sequelize";
 import Parser from "rss-parser";
 import sequelize from "@/bdd/sequelize";
-import { Tag } from "@/bdd/models/tag";
+import { Tag, TagCreation } from "@/bdd/models/tag";
 import { Source, SourceCreation } from "@/bdd/models/source";
 import Models from "@/bdd/models/index";
 import logger from "@/utils/logger";
@@ -31,9 +31,9 @@ const findDuplicateSourceWithUrl = async (
   return source ? source.toJSON() : null;
 };
 
-const findDuplicateTagWithName = async (channelId: string, name: string): Promise<string> => {
+const findDuplicateTagWithName = async (channelId: string, name: string): Promise<Tag | null> => {
   const tag = await Models.Tag.findOne({ where: { channelId, name } });
-  return tag ? tag.name : "";
+  return tag;
 };
 
 const addSource = async (
@@ -52,16 +52,16 @@ const addSource = async (
   else await channel.createSource(newSource);
 };
 
-const addTag = async (guildId: string, channelId: string, name: string): Promise<void> => {
+const addTag = async (guildId: string, channelId: string, newTag: TagCreation): Promise<void> => {
   let guild = await Models.Guild.findByPk(guildId);
   if (!guild) guild = await Models.Guild.create({ id: guildId });
 
   let channel = await Models.Channel.findByPk(channelId);
   if (!channel) channel = await guild.createChannel({ id: channelId });
 
-  const tag = await Models.Tag.findOne({ where: { channelId, name } });
+  const tag = await Models.Tag.findOne({ where: { channelId, name: newTag.name } });
   if (tag) throw new Error("Ce filtre existe déjà.");
-  else await channel.createTag({ name });
+  else await channel.createTag(newTag);
 };
 
 const deleteSource = async (

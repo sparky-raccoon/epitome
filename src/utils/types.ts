@@ -38,6 +38,16 @@ const isSourceCreation = (sourceCreation: unknown): sourceCreation is SourceCrea
   return sourceCreation && "name" in sourceCreation && "url" in sourceCreation;
 };
 
+const isSourceCreationList = (
+  sourceCreationList: unknown
+): sourceCreationList is SourceCreation[] => {
+  if (!sourceCreationList || !Array.isArray(sourceCreationList)) {
+    return false;
+  }
+
+  return sourceCreationList.every(isSourceCreation);
+};
+
 const isSource = (source: unknown): source is Source => {
   return isSourceCreation(source) && "id" in source;
 };
@@ -56,6 +66,14 @@ const isTagCreation = (tagCreation: unknown): tagCreation is TagCreation => {
   }
 
   return tagCreation && "name" in tagCreation;
+};
+
+const isTagCreationList = (tagCreationList: unknown): tagCreationList is TagCreation[] => {
+  if (!tagCreationList || !Array.isArray(tagCreationList)) {
+    return false;
+  }
+
+  return tagCreationList.every(isTagCreation);
 };
 
 const isTag = (tag: unknown): tag is Tag => {
@@ -84,8 +102,10 @@ export {
   isSource,
   isSourceCreation,
   isSourceList,
+  isSourceCreationList,
   isTag,
   isTagCreation,
   isTagList,
+  isTagCreationList,
   isSourceAndTagList,
 };

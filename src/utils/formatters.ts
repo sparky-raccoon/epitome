@@ -1,6 +1,6 @@
 import { blockQuote } from "discord.js";
 import { Source, SourceCreation } from "@/bdd/models/source";
-import { Tag } from "@/bdd/models/tag";
+import { Tag, TagCreation } from "@/bdd/models/tag";
 import { isSource, isTag } from "./types";
 
 const formatSourceToBlockQuote = (source: Source | SourceCreation): `>>> ${string}` => {
@@ -42,4 +42,15 @@ const formatSourceListToDescription = (list: (Source | Tag)[]): string => {
   return description;
 };
 
-export { formatSourceToBlockQuote, formatSourceListToDescription };
+const formatTagListToString = (list: (Tag | TagCreation)[]): string => {
+  let description = "";
+  list.forEach((tag, i) => {
+    const { name } = tag;
+    const isLast = i === list.length - 1;
+    description += `**${name}**${isLast ? "" : ", "}`;
+  });
+
+  return description;
+};
+
+export { formatSourceToBlockQuote, formatSourceListToDescription, formatTagListToString };

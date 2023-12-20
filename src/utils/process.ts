@@ -85,18 +85,28 @@ class Process {
       await this.interaction.deferReply();
 
       const { guildId, channelId } = this.interaction;
-      const name = this.interaction.options.getString("name");
-      if (!guildId || !channelId || !name) throw new Error(INTERNAL_ERROR);
+      const tags = this.interaction.options
+        .getString("names")
+        ?.split(" ")
+        .map((name) => ({ name }));
+      if (!guildId || !channelId || !tags) throw new Error(INTERNAL_ERROR);
 
-      const duplicateTag = await findDuplicateTagWithName(channelId, name);
-      if (duplicateTag) {
-        const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicateTag);
+      const duplicates = [];
+      const nonDuplicates = [];
+      for (const t of tags) {
+        const duplicate = await findDuplicateTagWithName(channelId, t.name);
+        if (duplicate) duplicates.push(duplicate);
+        else nonDuplicates.push(t);
+      }
+
+      if (duplicates.length === tags.length) {
+        const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicates);
         await this.interaction.editReply(message);
         this.terminate(this.interaction.user.id);
         return;
       }
 
-      let message = getMessage(Message.ADD_CONFIRM, { name });
+      let message = getMessage(Message.ADD_CONFIRM, { new: nonDuplicates, existing: duplicates });
       const response = await this.interaction.editReply(message);
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
@@ -104,8 +114,8 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        await addTag(guildId, channelId, name);
-        message = getMessage(Message.ADD_SUCCESS_TAG, name);
+        for (const tag of nonDuplicates) await addTag(guildId, channelId, tag);
+        message = getMessage(Message.ADD_SUCCESS_TAG);
         await confirmInteraction.update(message);
       } else this.cancel(this.interaction);
 

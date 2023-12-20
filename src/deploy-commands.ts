@@ -17,9 +17,11 @@ const commands = [
     ),
   new SlashCommandBuilder()
     .setName(Command.ADD_FILTER)
-    .setDescription("Ajouter un nouveau tag / filtre à un salon donné.")
+    .setDescription(
+      "Ajouter un ou plusieurs tag.s / filtre.s à un salon donné, séparés par un espace."
+    )
     .addStringOption((option) =>
-      option.setName("name").setDescription("Nom du tag à ajouter").setRequired(true)
+      option.setName("names").setDescription("Nom du ou des tag.s à ajouter").setRequired(true)
     ),
   new SlashCommandBuilder()
     .setName(Command.DELETE)

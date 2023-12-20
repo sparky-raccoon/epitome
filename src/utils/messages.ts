@@ -8,10 +8,14 @@ import {
   isSource,
   isSourceCreation,
   isTag,
-  isTagCreation,
+  isTagCreationList,
   isSourceAndTagList,
 } from "@/utils/types";
-import { formatSourceListToDescription, formatSourceToBlockQuote } from "@/utils/formatters";
+import {
+  formatSourceListToDescription,
+  formatSourceToBlockQuote,
+  formatTagListToString,
+} from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
 import { selectSavedSourcesOrTagsMenu } from "@/components/select-menu";
 
@@ -35,12 +39,14 @@ type MessageData =
   | Source[]
   | Tag
   | TagCreation
+  | TagCreation[]
   | Tag[]
   | Publication
+  | { new: TagCreation[]; existing: Tag[] }
   | Error;
 
 const ADD_SOURCE_TITLE = "Ajout d’une source d'information";
-const ADD_TAG_TITLE = "Ajout d’un tag / filtre";
+const ADD_TAG_TITLE = "Ajout d’un ou de plusieurs tag.s / filtre.s";
 const DELETE_SOURCE_TITLE = "Suppression d'une source ou d'un tag / filtre configuré";
 const DELETE_TAG_TITLE = "Suppression d’un tag / filtre configuré";
 const DELETE_SOURCE_OR_TAG_TITLE = "Suppression d’une source ou d’un tag / filtre configuré";
@@ -64,8 +70,8 @@ const getMessage = (type: Message, data?: MessageData) => {
         "serveurs pour des raisons différentes. \n\n" +
         "Voici la liste des commandes auxquelles je réponds :\n" +
         `▪︎ ${bold("/add-source <url>")} - pour ajouter une nouvelle source au salon présent.\n` +
-        `▪︎ ${bold("/add-filter <name>")} ` +
-        `- pour ajouter un nouveau tag / filtre au salon présent.\n` +
+        `▪︎ ${bold("/add-filter <names>")} ` +
+        `- pour ajouter un ou plusieurs tag.s / filtre.s au salon présent.\n` +
         `▪︎ ${bold("/delete")} - pour supprimer une source ou un tag associé au salon présent.\n` +
         `▪︎ ${bold("/cancel")} - pour annuler une procédure d’ajout ou de suppression en cours.\n` +
         `▪︎ ${bold("/list")} ` +
@@ -107,9 +113,17 @@ const getMessage = (type: Message, data?: MessageData) => {
         title += ADD_SOURCE_TITLE;
         description =
           "Tu sur le point d’ajouter la source suivante :\n" + formatSourceToBlockQuote(data);
-      } else if (isTagCreation(data)) {
+      } else if (typeof data === "object" && "new" in data && "existing" in data) {
+        const { new: newTags, existing: existingTags } = data;
+        console.log(newTags, existingTags);
         title += ADD_TAG_TITLE;
-        description = `Tu es sur le point d’ajouter le tag suivant : ${bold(data.name)}`;
+        description =
+          "Tu es sur le point d’ajouter le.s tag.s suivant.s : " +
+          formatTagListToString(newTags) +
+          (existingTags
+            ? "\nLe.s tag.s suivant.s ont déjà configuré.es : " +
+              formatTagListToString(existingTags)
+            : "");
       } else throw new Error("Invalid data type.");
       component = confirmOrCancelButton();
       break;
@@ -133,9 +147,11 @@ const getMessage = (type: Message, data?: MessageData) => {
         title += ADD_SOURCE_TITLE;
         description =
           "Il semblerait que cette source soit déjà suivie :\n" + formatSourceToBlockQuote(data);
-      } else if (isTagCreation(data)) {
+      } else if (isTagCreationList(data)) {
         title += ADD_TAG_TITLE;
-        description = `Il semblerait que ce tag soit déjà configuré : ${bold(data.name)}`;
+        description =
+          "Il semblerait que ce ou ces tag.e soi.ent déjà configuré.s : " +
+          formatTagListToString(data);
       } else throw new Error("Invalid data type.");
       break;
     }
