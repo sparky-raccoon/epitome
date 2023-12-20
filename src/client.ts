@@ -4,7 +4,11 @@ import { getMessage } from "@/utils/messages";
 import { Process } from "@/utils/process";
 import logger from "@/utils/logger";
 import initCronJob from "@/cron";
-import { initDatabase } from "@/bdd/operator";
+import {
+  initDatabase,
+  cleanDatabaseOnGuildLeave,
+  cleanDatabaseOnChannelLeave,
+} from "@/bdd/operator";
 import { Sequelize } from "sequelize";
 
 const initDiscordClient = (
@@ -26,6 +30,16 @@ const initDiscordClient = (
 
     client.on(Events.GuildCreate, async (guild) => {
       logger.info(`Joined new guild: ${guild.name} (${guild.id})`);
+    });
+
+    client.on(Events.GuildDelete, async (guild) => {
+      logger.info(`Left guild: $${guild.id}`);
+      await cleanDatabaseOnGuildLeave(guild.id);
+    });
+
+    client.on(Events.ChannelDelete, async (channel) => {
+      logger.info(`Left channel: ${channel.id}`);
+      await cleanDatabaseOnChannelLeave(channel.id);
     });
 
     const flows: { [userId: string]: Process } = {};

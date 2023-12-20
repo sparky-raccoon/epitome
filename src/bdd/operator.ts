@@ -10,8 +10,17 @@ const initDatabase = async (): Promise<Sequelize> => {
   logger.info("Initializing database", process.env.NODE_ENV);
   await sequelize.authenticate();
   await sequelize.sync();
-
   return sequelize;
+};
+
+const cleanDatabaseOnGuildLeave = async (guildId: string): Promise<void> => {
+  const guild = await Models.Guild.findByPk(guildId);
+  if (guild) await guild.destroy({ force: true });
+};
+
+const cleanDatabaseOnChannelLeave = async (channelId: string): Promise<void> => {
+  const channel = await Models.Channel.findByPk(channelId);
+  if (channel) await channel.destroy({ force: true });
 };
 
 const findDuplicateSourceWithUrl = async (
@@ -115,6 +124,8 @@ const getRssNameFromUrl = async (url: string): Promise<string> => {
 
 export {
   initDatabase,
+  cleanDatabaseOnGuildLeave,
+  cleanDatabaseOnChannelLeave,
   findDuplicateSourceWithUrl,
   findDuplicateTagWithName,
   addSource,
