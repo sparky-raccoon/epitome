@@ -101,11 +101,11 @@ export {
   isPublication,
   isSource,
   isSourceCreation,
-  isSourceList,
   isSourceCreationList,
+  isSourceList,
   isTag,
   isTagCreation,
-  isTagList,
   isTagCreationList,
+  isTagList,
   isSourceAndTagList,
 };

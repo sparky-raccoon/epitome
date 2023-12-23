@@ -6,13 +6,16 @@ import {
   Publication,
   isPublication,
   isSource,
-  isSourceCreation,
   isTag,
-  isTagCreationList,
   isSourceAndTagList,
+  isTagList,
+  isTagCreationList,
+  isSourceList,
+  isSourceCreationList,
 } from "@/utils/types";
 import {
-  formatSourceListToDescription,
+  formatFullListToDescription,
+  formatSourceListToBlockQuotes,
   formatSourceToBlockQuote,
   formatTagListToString,
 } from "@/utils/formatters";
@@ -45,7 +48,7 @@ type MessageData =
   | { new: TagCreation[]; existing: Tag[] }
   | Error;
 
-const ADD_SOURCE_TITLE = "Ajout d’une source d'information";
+const ADD_SOURCE_TITLE = "Ajout d’une ou plusieurs source.s d'information";
 const ADD_TAG_TITLE = "Ajout d’un ou de plusieurs tag.s / filtre.s";
 const DELETE_SOURCE_TITLE = "Suppression d'une source ou d'un tag / filtre configuré";
 const DELETE_TAG_TITLE = "Suppression d’un tag / filtre configuré";
@@ -105,27 +108,35 @@ const getMessage = (type: Message, data?: MessageData) => {
       if (!isSourceAndTagList(data)) throw new Error("Invalid data type.");
       title += "Liste des sources suivies & tags configurés";
       if (data.length === 0) description = "Aucune configuration connue pour ce salon.";
-      else description = formatSourceListToDescription(data);
+      else description = formatFullListToDescription(data);
       break;
     }
     case Message.ADD_CONFIRM: {
-      if (isSourceCreation(data)) {
-        title += ADD_SOURCE_TITLE;
-        description =
-          "Tu sur le point d’ajouter la source suivante :\n" + formatSourceToBlockQuote(data);
-      } else if (typeof data === "object" && "new" in data && "existing" in data) {
-        const { new: newTags, existing: existingTags } = data;
-        console.log(newTags, existingTags);
-        title += ADD_TAG_TITLE;
-        description =
-          "Tu es sur le point d’ajouter le.s tag.s suivant.s : " +
-          formatTagListToString(newTags) +
-          (existingTags
-            ? "\nLe.s tag.s suivant.s ont déjà configuré.es : " +
-              formatTagListToString(existingTags)
-            : "");
+      if (typeof data === "object" && "new" in data && "existing" in data) {
+        const { new: toAdd, existing } = data;
+        console.log(toAdd, existing);
+        if (isSourceCreationList(toAdd) && isSourceList(existing)) {
+          title += ADD_SOURCE_TITLE;
+          description =
+            "Tu es sur le point d'ajouter le.s source.s suivante.s :\n\n" +
+            formatSourceListToBlockQuotes(toAdd) +
+            (existing.length > 0
+              ? "\nLe.s source.s suivante.s ont déjà été configuré.es :\n\n" +
+                formatSourceListToBlockQuotes(existing)
+              : "");
+          component = confirmOrCancelButton();
+        } else if (isTagCreationList(toAdd) && isTagList(existing)) {
+          title += ADD_TAG_TITLE;
+          description =
+            "Tu es sur le point d’ajouter le.s tag.s suivant.s : \n" +
+            formatTagListToString(toAdd) +
+            (existing.length > 0
+              ? "\nLe.s tag.s suivant.s ont déjà configuré.es : " + formatTagListToString(existing)
+              : "");
+          component = confirmOrCancelButton();
+        } else throw new Error("Invalid data type.");
       } else throw new Error("Invalid data type.");
-      component = confirmOrCancelButton();
+
       break;
     }
     case Message.ADD_SUCCESS_SOURCE: {
@@ -143,15 +154,15 @@ const getMessage = (type: Message, data?: MessageData) => {
       break;
     }
     case Message.ADD_ALREADY_EXISTS: {
-      if (isSourceCreation(data)) {
+      if (isSourceList(data)) {
         title += ADD_SOURCE_TITLE;
         description =
-          "Il semblerait que cette source soit déjà suivie :\n" + formatSourceToBlockQuote(data);
-      } else if (isTagCreationList(data)) {
+          "Il semblerait que ce.s source.s soi.ent déjà suivie.s :\n\n" +
+          formatSourceListToBlockQuotes(data);
+      } else if (isTagList(data)) {
         title += ADD_TAG_TITLE;
         description =
-          "Il semblerait que ce ou ces tag.e soi.ent déjà configuré.s : " +
-          formatTagListToString(data);
+          "Il semblerait que ce.s tag.e soi.ent déjà configuré.s : " + formatTagListToString(data);
       } else throw new Error("Invalid data type.");
       break;
     }
@@ -196,7 +207,7 @@ const getMessage = (type: Message, data?: MessageData) => {
       break;
     }
     case Message.CANCEL: {
-      title += "Procédure d'ajout / de mise à jour / de suppression annulée";
+      title += "Procédure annulée";
       description = "Ce message s'auto-détruira dans quelques instants.";
       break;
     }

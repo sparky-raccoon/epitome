@@ -11,7 +11,8 @@ import {
   deleteTag,
 } from "@/bdd/operator";
 import { getMessage } from "@/utils/messages";
-import { SourceCreation } from "@/bdd/models/source";
+import { Source, SourceCreation } from "@/bdd/models/source";
+import { Tag, TagCreation } from "@/bdd/models/tag";
 import logger from "@/utils/logger";
 import { isSource, isTag } from "./types";
 
@@ -46,21 +47,32 @@ class Process {
       await this.interaction.deferReply();
 
       const { guildId, channelId } = this.interaction;
-      const url = this.interaction.options.getString("url");
-      if (!guildId || !channelId || !url) throw new Error(INTERNAL_ERROR);
+      const sources = this.interaction.options
+        .getString("urls")
+        ?.split(" ")
+        .map((url) => ({ url }));
+      if (!guildId || !channelId || !sources || sources.length === 0)
+        throw new Error(INTERNAL_ERROR);
 
-      const duplicateSource = await findDuplicateSourceWithUrl(channelId, url);
-      if (duplicateSource) {
-        const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicateSource);
+      const duplicates: Source[] = [];
+      const nonDuplicates: SourceCreation[] = [];
+      for (const s of sources) {
+        const duplicate = await findDuplicateSourceWithUrl(channelId, s.url);
+        if (duplicate) duplicates.push(duplicate);
+        else {
+          const name = await getRssNameFromUrl(s.url);
+          nonDuplicates.push({ ...s, name });
+        }
+      }
+
+      if (duplicates.length === sources.length) {
+        const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicates);
         await this.interaction.editReply(message);
         this.terminate(this.interaction.user.id);
         return;
       }
 
-      const name = await getRssNameFromUrl(url);
-      const source: SourceCreation = { name, url };
-
-      let message = getMessage(Message.ADD_CONFIRM, source);
+      let message = getMessage(Message.ADD_CONFIRM, { new: nonDuplicates, existing: duplicates });
       const response = await this.interaction.editReply(message);
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
@@ -68,8 +80,8 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        await addSource(guildId, channelId, source);
-        message = getMessage(Message.ADD_SUCCESS_SOURCE, source);
+        for (const source of nonDuplicates) await addSource(guildId, channelId, source);
+        message = getMessage(Message.ADD_SUCCESS_SOURCE);
         await confirmInteraction.update(message);
       } else this.cancel(this.interaction);
 
@@ -89,10 +101,10 @@ class Process {
         .getString("names")
         ?.split(" ")
         .map((name) => ({ name }));
-      if (!guildId || !channelId || !tags) throw new Error(INTERNAL_ERROR);
+      if (!guildId || !channelId || !tags || tags.length === 0) throw new Error(INTERNAL_ERROR);
 
-      const duplicates = [];
-      const nonDuplicates = [];
+      const duplicates: Tag[] = [];
+      const nonDuplicates: TagCreation[] = [];
       for (const t of tags) {
         const duplicate = await findDuplicateTagWithName(channelId, t.name);
         if (duplicate) duplicates.push(duplicate);

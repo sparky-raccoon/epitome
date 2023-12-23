@@ -11,9 +11,9 @@ if (!token || !clientId) throw new Error("Missing environment variables");
 const commands = [
   new SlashCommandBuilder()
     .setName(Command.ADD_SOURCE)
-    .setDescription("Ajouter une nouvelle source d'information à un salon donné.")
+    .setDescription("Ajouter une ou plusieurs sources d'information à un salon donné.")
     .addStringOption((option) =>
-      option.setName("url").setDescription("Url de la source à ajouter").setRequired(true)
+      option.setName("urls").setDescription("Urls de la source à ajouter").setRequired(true)
     ),
   new SlashCommandBuilder()
     .setName(Command.ADD_FILTER)

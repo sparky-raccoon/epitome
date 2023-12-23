@@ -11,7 +11,18 @@ const formatSourceToBlockQuote = (source: Source | SourceCreation): `>>> ${strin
   );
 };
 
-const formatSourceListToDescription = (list: (Source | Tag)[]): string => {
+const formatSourceListToBlockQuotes = (list: (Source | SourceCreation)[]): string => {
+  let description = "";
+  list.forEach((source) => {
+    const { type, name, url } = source;
+    description +=
+      `Type : ${type?.toUpperCase() || "RSS"} \n` + `Chaîne : ${name}\n` + `Url : ${url}\n\n`;
+  });
+
+  return blockQuote(description);
+};
+
+const formatFullListToDescription = (list: (Source | Tag)[]): string => {
   let description = "";
   type ByTypeSourceList = { [type: string]: { name: string; url: string }[] };
 
@@ -53,4 +64,9 @@ const formatTagListToString = (list: (Tag | TagCreation)[]): string => {
   return description;
 };
 
-export { formatSourceToBlockQuote, formatSourceListToDescription, formatTagListToString };
+export {
+  formatSourceToBlockQuote,
+  formatSourceListToBlockQuotes,
+  formatFullListToDescription,
+  formatTagListToString,
+};
