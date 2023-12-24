@@ -3,13 +3,13 @@ import { Command, Message, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/con
 import {
   findDuplicateSourceWithUrl,
   findDuplicateTagWithName,
-  getRssNameFromUrl,
   addSource,
   addTag,
   deleteSource,
   listEverything,
   deleteTag,
 } from "@/bdd/operator";
+import { getRssNameFromUrl } from "@/utils/parser";
 import { getMessage } from "@/utils/messages";
 import { Source, SourceCreation } from "@/bdd/models/source";
 import { Tag, TagCreation } from "@/bdd/models/tag";
@@ -61,12 +61,17 @@ class Process {
         if (duplicate) duplicates.push(duplicate);
         else {
           const name = await getRssNameFromUrl(s.url);
-          nonDuplicates.push({ ...s, name });
+          if (name) nonDuplicates.push({ ...s, name });
         }
       }
 
       if (duplicates.length === sources.length) {
         const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicates);
+        await this.interaction.editReply(message);
+        this.terminate(this.interaction.user.id);
+        return;
+      } else if (nonDuplicates.length === 0) {
+        const message = getMessage(Message.ADD_NO_VALID_URL);
         await this.interaction.editReply(message);
         this.terminate(this.interaction.user.id);
         return;

@@ -15,6 +15,7 @@ enum Message {
   ADD_SUCCESS_SOURCE = "add_success_source",
   ADD_SUCCESS_TAG = "add_success_tag",
   ADD_ALREADY_EXISTS = "add_already_exists",
+  ADD_NO_VALID_URL = "add_no_valid_url",
   DELETE_SELECT = "delete_select",
   DELETE_CONFIRM = "delete_confirm",
   DELETE_SUCCESS_SOURCE = "delete_success_source",

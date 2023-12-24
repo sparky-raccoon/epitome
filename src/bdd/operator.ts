@@ -1,5 +1,4 @@
 import { Sequelize } from "sequelize";
-import Parser from "rss-parser";
 import sequelize from "@/bdd/sequelize";
 import { Tag, TagCreation } from "@/bdd/models/tag";
 import { Source, SourceCreation } from "@/bdd/models/source";
@@ -116,12 +115,6 @@ const updateSourceTimestamp = async (sourrceId: string, timestamp: string): Prom
   await Models.Source.update({ timestamp }, { where: { id: sourrceId } });
 };
 
-const getRssNameFromUrl = async (url: string): Promise<string> => {
-  const parser = new Parser();
-  const feed = await parser.parseURL(url);
-  return feed.title || "Undefined";
-};
-
 export {
   initDatabase,
   cleanDatabaseOnGuildLeave,
@@ -137,5 +130,4 @@ export {
   listChannelTags,
   listEverything,
   updateSourceTimestamp,
-  getRssNameFromUrl,
 };

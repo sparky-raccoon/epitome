@@ -114,7 +114,6 @@ const getMessage = (type: Message, data?: MessageData) => {
     case Message.ADD_CONFIRM: {
       if (typeof data === "object" && "new" in data && "existing" in data) {
         const { new: toAdd, existing } = data;
-        console.log(toAdd, existing);
         if (isSourceCreationList(toAdd) && isSourceList(existing)) {
           title += ADD_SOURCE_TITLE;
           description =
@@ -164,6 +163,11 @@ const getMessage = (type: Message, data?: MessageData) => {
         description =
           "Il semblerait que ce.s tag.e soi.ent déjà configuré.s : " + formatTagListToString(data);
       } else throw new Error("Invalid data type.");
+      break;
+    }
+    case Message.ADD_NO_VALID_URL: {
+      title += ADD_SOURCE_TITLE;
+      description = "Aucune URL valide n'a été fournie.";
       break;
     }
     case Message.DELETE_SELECT: {
