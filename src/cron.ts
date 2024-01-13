@@ -28,15 +28,24 @@ const parseRssFeeds = async (channelId: string): Promise<Publication[]> => {
 
       const items = feed.items;
       const lastParsedMs = parseInt(timestamp);
+      let newTimestamp = lastParsedMs.toString();
+      logger.info(`Last parsed timestamp for ${name}: ${lastParsedMs}`);
 
-      for (let i = items.length - 1; i >= 0; i--) {
+      items.sort((a, b) => {
+        const aMs = a.pubDate ? new Date(a.pubDate).getTime() : 0;
+        const bMs = b.pubDate ? new Date(b.pubDate).getTime() : 0;
+        return aMs - bMs;
+      });
+
+      for (let i = 0; i < items.length; i++) {
         const item = items[i];
         const { pubDate, title, link, contentSnippet, creator: author } = item;
         if (!pubDate || !title || !link || !contentSnippet) continue;
 
         const pubDateMs = new Date(pubDate).getTime();
         if (lastParsedMs < pubDateMs) {
-          await updateSourceTimestamp(id, pubDateMs.toString());
+          newTimestamp = pubDateMs.toString();
+          logger.info(`New publication for ${name}: ${title} (${pubDateMs})`);
 
           const duplicateIndex = publications.findIndex((p) => p.title === title);
           if (duplicateIndex >= 0) {
@@ -67,6 +76,11 @@ const parseRssFeeds = async (channelId: string): Promise<Publication[]> => {
             });
           }
         }
+      }
+
+      if (newTimestamp !== lastParsedMs.toString()) {
+        logger.info(`Updating source ${id} with timestamp ${newTimestamp}`);
+        await updateSourceTimestamp(id, newTimestamp);
       }
     }
   }
