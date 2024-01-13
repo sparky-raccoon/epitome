@@ -4,4 +4,4 @@ sources.json
 .eslintcache
 dist
 *.log
-database.sqlite
+*.sqlite
