@@ -8,7 +8,7 @@
     "dev": "export NODE_ENV=development && tsx watch src/index.ts",
     "build": "rm -rf dist && tsc -p tsconfig.prod.json && tsc-alias",
     "start-and-register": "pm2 start -f dist/index.js --name epitome && pm2 save",
-    "stop-and-delete": "pm2 stop epitome && pm2 delete epitome",
+    "stop-and-delete": "pm2 delete epitome 2> /dev/null || true",
     "build-and-run": "yarn run build && yarn run stop-and-delete && yarn run start-and-register",
     "deploy-commands": "tsx src/deploy-commands.ts",
     "deploy-commands-dev": "export NODE_ENV=development && tsx src/deploy-commands.ts",
