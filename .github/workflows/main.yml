@@ -20,11 +20,15 @@ jobs:
         run: yarn run build
       - name: Stop previous epitome pm2 process
         run: pm2 delete epitome 2> /dev/null || true
+      - name: Create a database backup
+        run: cp ~/apps/database.sqlite ~/.epitome.database.sqlite.backup
       - name: Prepare application directory
         run: rm -rf ~/apps/epitome && mkdir ~/apps/epitome
       - name: Move build contents & dependencies to application directory
         run: mv dist/* ~/apps/epitome && mv node_modules ~/apps/epitome
       - name: Export token and client id as environment variables
         run: export TOKEN=$TOKEN && export CLIENT_ID=$CLIENT_ID
+      - name: Restore database backup
+        run: cp ~/.epitome.database.sqlite.backup ~/apps/epitome/database.sqlite && rm ~/.epitome.database.sqlite.backup
       - name: Start new epitome pm2 process
         run: cd ~/apps/epitome && pm2 start -f index.js --name epitome && pm2 save
