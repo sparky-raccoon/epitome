@@ -4,7 +4,9 @@ import { Command } from "@/utils/constants";
 import logger from "@/utils/logger";
 
 dotenv.config();
-const { TOKEN: token, CLIENT_ID: clientId } = process.env;
+const { NODE_ENV, TOKEN, TOKEN_DEV, CLIENT_ID, CLIENT_ID_DEV } = process.env;
+const token = NODE_ENV === "development" ? TOKEN_DEV : TOKEN;
+const clientId = NODE_ENV === "development" ? CLIENT_ID_DEV : CLIENT_ID;
 
 if (!token || !clientId) throw new Error("Missing environment variables");
 

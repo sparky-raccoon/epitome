@@ -30,7 +30,6 @@ const parseRssFeeds = async (channelId: string): Promise<Publication[]> => {
       const lastParsedMs = parseInt(timestamp);
       let newTimestamp = lastParsedMs.toString();
       logger.info(`Last parsed timestamp for "${name}": ${lastParsedMs}`);
-      logger.info("Tags: " + tagList.map((t) => t.name).join(", "));
 
       items.sort((a, b) => {
         const aMs = a.pubDate ? new Date(a.pubDate).getTime() : 0;
