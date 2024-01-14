@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - test/gh-actions
 jobs:
   build:
     runs-on: self-hosted
