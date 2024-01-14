@@ -29,7 +29,8 @@ const parseRssFeeds = async (channelId: string): Promise<Publication[]> => {
       const items = feed.items;
       const lastParsedMs = parseInt(timestamp);
       let newTimestamp = lastParsedMs.toString();
-      logger.info(`Last parsed timestamp for ${name}: ${lastParsedMs}`);
+      logger.info(`Last parsed timestamp for "${name}": ${lastParsedMs}`);
+      logger.info("Tags: " + tagList.map((t) => t.name).join(", "));
 
       items.sort((a, b) => {
         const aMs = a.pubDate ? new Date(a.pubDate).getTime() : 0;
@@ -45,7 +46,13 @@ const parseRssFeeds = async (channelId: string): Promise<Publication[]> => {
         const pubDateMs = new Date(pubDate).getTime();
         if (lastParsedMs < pubDateMs) {
           newTimestamp = pubDateMs.toString();
-          logger.info(`New publication for ${name}: ${title} (${pubDateMs})`);
+
+          const MAX_TITLE_LENGTH_IN_LOGS = 50;
+          const slicedTitle =
+            title.length >= MAX_TITLE_LENGTH_IN_LOGS
+              ? title.slice(0, MAX_TITLE_LENGTH_IN_LOGS) + "..."
+              : title;
+          logger.info(`New publication : ${slicedTitle} (${pubDateMs})`);
 
           const duplicateIndex = publications.findIndex((p) => p.title === title);
           if (duplicateIndex >= 0) {
@@ -57,12 +64,15 @@ const parseRssFeeds = async (channelId: string): Promise<Publication[]> => {
           } else if (
             tagList.length === 0 ||
             tagList
-              .map((t) => t.name)
-              .some(
-                (keyword) =>
-                  title.toLowerCase().includes(keyword) ||
-                  contentSnippet.toLowerCase().includes(keyword)
-              )
+              .map((t) => t.name.toLowerCase())
+              .some((keyword) => {
+                const sentenceHasKeyWord = (s: string) =>
+                  s.toLowerCase().split(" ").includes(keyword);
+                const titleHasKeyword = sentenceHasKeyWord(title);
+                const contentHasKeyword = sentenceHasKeyWord(contentSnippet);
+
+                return titleHasKeyword || contentHasKeyword;
+              })
           ) {
             publications.push({
               type,
