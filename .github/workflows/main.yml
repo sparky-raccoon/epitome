@@ -7,6 +7,9 @@ on:
 jobs:
   deploy:
     name: Deploy to Raspberry Pi 4 (self-hosted) 🦖
+    env:
+      TOKEN: ${{ secrets.TOKEN }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID }}
     runs-on: self-hosted
     steps:
       - name: Check out repository code
@@ -21,5 +24,7 @@ jobs:
         run: rm -rf ~/apps/epitome && mkdir ~/apps/epitome
       - name: Move build contents & dependencies to application directory
         run: mv dist/* ~/apps/epitome && mv node_modules ~/apps/epitome
+      - name: Export token and client id as environment variables
+        run: export TOKEN=$TOKEN && export CLIENT_ID=$CLIENT_ID
       - name: Start new epitome pm2 process
         run: cd ~/apps/epitome && pm2 start -f index.js --name epitome && pm2 save
