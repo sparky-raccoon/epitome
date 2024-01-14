@@ -16,10 +16,10 @@ jobs:
       - name: Build epitome (/dist)
         run: yarn run build
       - name: Stop previous epitome pm2 process
-        run: yarn run stop-and-delete
+        run: pm2 delete epitome 2> /dev/null || true
       - name: Prepare application directory
         run: rm -rf ~/apps/epitome && mkdir ~/apps/epitome
       - name: Move build contents to application directory
         run: mv dist/* ~/apps/epitome
       - name: Start new epitome pm2 process
-        run: cd ~/apps/epitome && yarn run start-and-register
+        run: cd ~/apps/epitome && pm2 start -f index.js --name epitome && pm2 save
