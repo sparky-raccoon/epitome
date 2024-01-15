@@ -117,11 +117,11 @@ const getMessage = (type: Message, data?: MessageData) => {
         if (isSourceCreationList(toAdd) && isSourceList(existing)) {
           title += ADD_SOURCE_TITLE;
           description =
-            "Tu es sur le point d'ajouter le.s source.s suivante.s :\n\n" +
-            formatSourceListToBlockQuotes(toAdd) +
+            `Tu es sur le point d'ajouter la.s source.s suivante.s :\n\n` +
+            formatFullListToDescription(toAdd) +
             (existing.length > 0
               ? "\nLe.s source.s suivante.s ont déjà été configuré.es :\n\n" +
-                formatSourceListToBlockQuotes(existing)
+                formatFullListToDescription(existing)
               : "");
           component = confirmOrCancelButton();
         } else if (isTagCreationList(toAdd) && isTagList(existing)) {

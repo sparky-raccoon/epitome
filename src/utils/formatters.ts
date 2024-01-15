@@ -1,7 +1,7 @@
 import { blockQuote } from "discord.js";
 import { Source, SourceCreation } from "@/bdd/models/source";
 import { Tag, TagCreation } from "@/bdd/models/tag";
-import { isSource, isTag } from "./types";
+import { isSource, isSourceCreation, isTag } from "./types";
 
 const formatSourceToBlockQuote = (source: Source | SourceCreation): `>>> ${string}` => {
   const { type, name, url } = source;
@@ -22,12 +22,12 @@ const formatSourceListToBlockQuotes = (list: (Source | SourceCreation)[]): strin
   return blockQuote(description);
 };
 
-const formatFullListToDescription = (list: (Source | Tag)[]): string => {
+const formatFullListToDescription = (list: (Source | SourceCreation | Tag)[]): string => {
   let description = "";
   type ByTypeSourceList = { [type: string]: { name: string; url: string }[] };
 
   const byTypeSourceList = list.reduce((acc: ByTypeSourceList, sourceOrTag) => {
-    if (isSource(sourceOrTag)) {
+    if (isSource(sourceOrTag) || isSourceCreation(sourceOrTag)) {
       const { type, name, url } = sourceOrTag;
       const formattedType = `Flux ${type?.toUpperCase() || "RSS"}`;
       if (!acc[formattedType]) acc[formattedType] = [];
