@@ -14,8 +14,13 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
-      - name: Install npm dependencies with yarn
-        run: yarn
+      - name: Check out yarn cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: 14
+          cache: yarn
+      - name: Install npm dependencies with yarn if needed
+        run: yarn install --from-lock-file
       - name: Build epitome (/dist)
         run: yarn run build
       - name: Stop previous epitome pm2 process
