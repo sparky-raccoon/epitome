@@ -26,7 +26,7 @@ jobs:
       - name: Stop previous epitome pm2 process
         run: pm2 delete epitome 2> /dev/null || true
       - name: Create a database backup
-        run: touch ~/apps/database.sqlite && cp ~/apps/database.sqlite ~/.epitome.database.sqlite.backup
+        run: touch ~/apps/epitome/database.sqlite && cp ~/apps/epitome/database.sqlite ~/.epitome.database.sqlite.backup
       - name: Prepare application directory
         run: rm -rf ~/apps/epitome && mkdir ~/apps/epitome
       - name: Move build contents & dependencies to application directory
