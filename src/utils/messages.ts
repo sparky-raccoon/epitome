@@ -56,8 +56,8 @@ type MessageData =
   | Error;
 type MessageComponent = ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>;
 
-const ADD_SOURCE_TITLE = "Ajout d’une ou plusieurs source.s d'information";
-const ADD_TAG_TITLE = "Ajout d’un ou de plusieurs tag.s / filtre.s";
+const ADD_SOURCE_TITLE = "Ajout d’une ou plusieurs sources d'information";
+const ADD_TAG_TITLE = "Ajout d’un ou de plusieurs tags / filtres";
 const DELETE_SOURCE_TITLE = "Suppression d'une source ou d'un tag / filtre configuré";
 const DELETE_TAG_TITLE = "Suppression d’un tag / filtre configuré";
 
@@ -100,14 +100,13 @@ const getMessage = (type: Message, data?: MessageData): any => {
         "d’information à partir de leurs flux RSS - d'autres modes de suivi seront supportés à l'avenir. " +
         "Chaque salon de ton serveur Discord dispose de sa propre configuration et peut se voir associer " +
         "des sources différentes. Les publications relatives à ces sources peuvent être filtrées " +
-        "à partir d'une liste de tags choisis. Ainsi, une même source peut être suivie dans plusieurs " +
-        "serveurs pour des raisons différentes. \n\n" +
+        "à partir d'une liste de tags choisis. \n\n" +
         "Voici la liste des commandes auxquelles je réponds :\n" +
         `▪︎ ${bold(
           "/add-source <urls>"
         )} - pour ajouter une ou plusieurs source au salon présent.\n` +
         `▪︎ ${bold("/add-filter <names>")} ` +
-        `- pour ajouter un ou plusieurs tag.s / filtre.s au salon présent.\n` +
+        `- pour ajouter un ou plusieurs tags / filtres au salon présent.\n` +
         `▪︎ ${bold(
           "/delete <nom>"
         )} - pour supprimer une source ou un tag associé au salon présent via leurs identifiants.\n` +
@@ -152,20 +151,20 @@ const getMessage = (type: Message, data?: MessageData): any => {
         if (isSourceCreationList(toAdd) && isSourceList(existing)) {
           title += ADD_SOURCE_TITLE;
           description =
-            `Tu es sur le point d'ajouter la.s source.s suivante.s :\n\n` +
+            `Tu es sur le point d'ajouter les sources suivantes :\n\n` +
             formatFullListToDescription(toAdd) +
             (existing.length > 0
-              ? "\nLe.s source.s suivante.s ont déjà été configuré.es :\n\n" +
+              ? "\nLes sources suivantes ont déjà été configurées :\n\n" +
                 formatFullListToDescription(existing)
               : "");
           component = confirmOrCancelButton();
         } else if (isTagCreationList(toAdd) && isTagList(existing)) {
           title += ADD_TAG_TITLE;
           description =
-            "Tu es sur le point d’ajouter le.s tag.s suivant.s : \n" +
+            "Tu es sur le point d’ajouter les tags suivants : \n" +
             formatTagListToString(toAdd) +
             (existing.length > 0
-              ? "\nLe.s tag.s suivant.s ont déjà configuré.es : " + formatTagListToString(existing)
+              ? "\nLes tags suivants ont déjà configurés : " + formatTagListToString(existing)
               : "");
           component = confirmOrCancelButton();
         } else throw new Error("Invalid data type.");
@@ -191,12 +190,12 @@ const getMessage = (type: Message, data?: MessageData): any => {
       if (isSourceList(data)) {
         title += ADD_SOURCE_TITLE;
         description =
-          "Il semblerait que ce.s source.s soi.ent déjà suivie.s :\n\n" +
+          "Il semblerait que ces sources soient déjà suivies :\n\n" +
           formatSourceListToBlockQuotes(data);
       } else if (isTagList(data)) {
         title += ADD_TAG_TITLE;
         description =
-          "Il semblerait que ce.s tag.e soi.ent déjà configuré.s : " + formatTagListToString(data);
+          "Il semblerait que ces tags soient déjà configurés : " + formatTagListToString(data);
       } else throw new Error("Invalid data type.");
       break;
     }
@@ -222,14 +221,14 @@ const getMessage = (type: Message, data?: MessageData): any => {
       title += DELETE_SOURCE_TITLE + " effective";
       description =
         `Tu ne seras plus notifié.e des dernières publications associées à celle-ci. ` +
-        `Pour retrouver la liste des sources de publication présentement configurées, appelle la commande \`/list\``;
+        `Pour retrouver la liste des sources de publication présentement configurées dans ce salon, appelle la commande \`/list\``;
       break;
     }
     case Message.DELETE_SUCCESS_TAG: {
       title += DELETE_TAG_TITLE + " effective";
       description =
         `Les publications ne seront plus filtrées selon ce tag. ` +
-        `Pour retrouver la liste des tags présentement configurés, appelle la commande \`/list\``;
+        `Pour retrouver la liste des tags présentement configurés dans ce salon, appelle la commande \`/list\``;
       break;
     }
     case Message.CANCEL: {
