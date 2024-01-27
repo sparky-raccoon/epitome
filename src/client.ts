@@ -3,6 +3,7 @@ import { Command, Message } from "@/utils/constants";
 import { getMessage } from "@/utils/messages";
 import { Process } from "@/utils/process";
 import logger from "@/utils/logger";
+import { reply } from "@/utils/replier";
 import initCronJob from "@/cron";
 import {
   initDatabase,
@@ -48,22 +49,21 @@ const initDiscordClient = (
       const userId = interaction.user.id;
       if (interaction.isChatInputCommand()) {
         if (interaction.commandName === Command.HELP) {
-          await interaction.reply(getMessage(Message.HELP));
+          await reply(interaction, getMessage(Message.HELP));
         } else {
           if (!flows[userId]) {
             if (interaction.commandName !== Command.CANCEL) {
               flows[userId] = new Process(interaction, cleanup);
             } else {
-              await interaction.reply(
-                getMessage(
-                  Message.ERROR,
-                  "Il n'y a aucune procédure dont tu serais l'initiateur.ice à annuler."
-                )
+              await reply(
+                interaction,
+                getMessage(Message.ERROR, "Tu n'as aucune procédure en cours.")
               );
             }
           } else {
             if (interaction.commandName !== Command.CANCEL) {
-              await interaction.reply(
+              await reply(
+                interaction,
                 getMessage(
                   Message.ERROR,
                   "Tu as déjà une procédure en cours. Tu peux l'annuler avec la commande `/cancel`."

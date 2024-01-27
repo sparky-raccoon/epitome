@@ -1,4 +1,11 @@
-import { ColorResolvable, EmbedBuilder, bold } from "discord.js";
+import {
+  ColorResolvable,
+  EmbedBuilder,
+  bold,
+  ActionRowBuilder,
+  ButtonBuilder,
+  StringSelectMenuBuilder,
+} from "discord.js";
 import { Message } from "@/utils/constants";
 import { Source, SourceCreation } from "@/bdd/models/source";
 import { Tag, TagCreation } from "@/bdd/models/tag";
@@ -18,6 +25,7 @@ import {
   formatSourceListToBlockQuotes,
   formatSourceToBlockQuote,
   formatTagListToString,
+  splitDescriptionInMultipleMessages,
 } from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
 import { selectSavedSourcesOrTagsMenu } from "@/components/select-menu";
@@ -47,6 +55,7 @@ type MessageData =
   | Publication
   | { new: TagCreation[]; existing: Tag[] }
   | Error;
+type MessageComponent = ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>;
 
 const ADD_SOURCE_TITLE = "Ajout d’une ou plusieurs source.s d'information";
 const ADD_TAG_TITLE = "Ajout d’un ou de plusieurs tag.s / filtre.s";
@@ -54,12 +63,36 @@ const DELETE_SOURCE_TITLE = "Suppression d'une source ou d'un tag / filtre confi
 const DELETE_TAG_TITLE = "Suppression d’un tag / filtre configuré";
 const DELETE_SOURCE_OR_TAG_TITLE = "Suppression d’une source ou d’un tag / filtre configuré";
 
-const getMessage = (type: Message, data?: MessageData) => {
+const buildDiscordMessage = (
+  isFirstEntry = true,
+  messageData: {
+    title: string;
+    color: ColorResolvable;
+    description?: string;
+    imageUrl?: string;
+    component?: MessageComponent;
+  }
+) => {
+  const { title, description, color, imageUrl, component } = messageData;
+  const embed: EmbedBuilder = new EmbedBuilder().setColor(color).setTitle(title);
+  if (description) embed.setDescription(description);
+
+  if (isFirstEntry) {
+    if (imageUrl) embed.setImage(imageUrl);
+    return component
+      ? { embeds: [embed], components: [component], ephemeral: true }
+      : { embeds: [embed], components: [], ephemeral: true };
+  } else return { embeds: [embed], components: [], ephemeral: true };
+};
+
+// FIXME: somehow functions overloads are not working here
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getMessage = (type: Message, data?: MessageData): any => {
   let color: ColorResolvable = "#ffffff";
   let title = "✸ ";
   let description = "";
   const imageUrl = "";
-  let component;
+  let component: MessageComponent | undefined;
 
   switch (type) {
     case Message.HELP: {
@@ -222,14 +255,22 @@ const getMessage = (type: Message, data?: MessageData) => {
     }
   }
 
-  const embed: EmbedBuilder = new EmbedBuilder().setColor(color).setTitle(title);
-
-  if (description) embed.setDescription(description);
-  if (imageUrl) embed.setImage(imageUrl);
-
-  return component
-    ? { embeds: [embed], components: [component], ephemeral: true }
-    : { embeds: [embed], components: [], ephemeral: true };
+  const result = [];
+  if (description.length > 2000) {
+    splitDescriptionInMultipleMessages(description).forEach((description, i, descs) => {
+      const isFirstEntry = i === 0;
+      result.push(
+        buildDiscordMessage(isFirstEntry, {
+          title: title + ` (${i + 1} / ${descs.length})`,
+          description,
+          color,
+          imageUrl,
+          component,
+        })
+      );
+    });
+  } else result.push(buildDiscordMessage(true, { title, description, color, imageUrl, component }));
+  return result;
 };
 
 export { getMessage };

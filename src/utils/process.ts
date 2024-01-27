@@ -14,7 +14,8 @@ import { getMessage } from "@/utils/messages";
 import { Source, SourceCreation } from "@/bdd/models/source";
 import { Tag, TagCreation } from "@/bdd/models/tag";
 import logger from "@/utils/logger";
-import { isSource, isTag } from "./types";
+import { reply, editReply } from "@/utils/replier";
+import { isSource, isTag } from "@/utils/types";
 
 const TIMEOUT = 60000;
 
@@ -67,18 +68,18 @@ class Process {
 
       if (duplicates.length === sources.length) {
         const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicates);
-        await this.interaction.editReply(message);
+        await editReply(this.interaction, message);
         this.terminate(this.interaction.user.id);
         return;
       } else if (nonDuplicates.length === 0) {
         const message = getMessage(Message.ADD_NO_VALID_URL);
-        await this.interaction.editReply(message);
+        await editReply(this.interaction, message);
         this.terminate(this.interaction.user.id);
         return;
       }
 
       let message = getMessage(Message.ADD_CONFIRM, { new: nonDuplicates, existing: duplicates });
-      const response = await this.interaction.editReply(message);
+      const response = await editReply(this.interaction, message);
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
         componentType: ComponentType.Button,
@@ -87,13 +88,13 @@ class Process {
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
         for (const source of nonDuplicates) await addSource(guildId, channelId, source);
         message = getMessage(Message.ADD_SUCCESS_SOURCE);
-        await confirmInteraction.update(message);
+        await confirmInteraction.update(message[0]);
       } else this.cancel(this.interaction);
 
       this.terminate(this.interaction.user.id);
     } catch (err) {
-      if (err instanceof Error) this.error(err.message);
-      else if (typeof err === "string") this.error(err);
+      if (err instanceof Error) await this.error(err.message);
+      else if (typeof err === "string") await this.error(err);
     }
   }
 
@@ -118,13 +119,13 @@ class Process {
 
       if (duplicates.length === tags.length) {
         const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicates);
-        await this.interaction.editReply(message);
+        await editReply(this.interaction, message);
         this.terminate(this.interaction.user.id);
         return;
       }
 
       let message = getMessage(Message.ADD_CONFIRM, { new: nonDuplicates, existing: duplicates });
-      const response = await this.interaction.editReply(message);
+      const response = await editReply(this.interaction, message);
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
         componentType: ComponentType.Button,
@@ -133,13 +134,13 @@ class Process {
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
         for (const tag of nonDuplicates) await addTag(guildId, channelId, tag);
         message = getMessage(Message.ADD_SUCCESS_TAG);
-        await confirmInteraction.update(message);
+        await confirmInteraction.update(message[0]);
       } else this.cancel(this.interaction);
 
       this.terminate(this.interaction.user.id);
     } catch (err) {
-      if (err instanceof Error) this.error(err.message);
-      else if (typeof err === "string") this.error(err);
+      if (err instanceof Error) await this.error(err.message);
+      else if (typeof err === "string") await this.error(err);
     }
   }
 
@@ -155,14 +156,14 @@ class Process {
 
       if (fullList.length === 0) {
         message = getMessage(Message.DELETE_NOTHING_SAVED);
-        await this.interaction.editReply(message);
+        await editReply(this.interaction, message);
         this.terminate(this.interaction.user.id);
         return;
       }
 
       message = getMessage(Message.DELETE_SELECT, fullList);
 
-      let response = await this.interaction.editReply(message);
+      let response = await editReply(this.interaction, message);
       const selectInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
         componentType: ComponentType.StringSelect,
@@ -173,7 +174,7 @@ class Process {
       if (!selectedSourceOrTag) throw new Error(INTERNAL_ERROR);
 
       message = getMessage(Message.DELETE_CONFIRM, selectedSourceOrTag);
-      response = (await selectInteraction.update(message)) as unknown as DiscordMessage;
+      response = (await selectInteraction.update(message[0])) as unknown as DiscordMessage;
 
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
@@ -188,13 +189,13 @@ class Process {
           await deleteTag(guildId, channelId, selectedSourceOrTag.name);
           message = getMessage(Message.DELETE_SUCCESS_TAG, selectedSourceOrTag);
         }
-        await confirmInteraction.update(message);
+        await confirmInteraction.update(message[0]);
       } else this.cancel(this.interaction);
 
       this.terminate(this.interaction.user.id);
     } catch (err) {
-      if (err instanceof Error) this.error(err.message);
-      else if (typeof err === "string") this.error(err);
+      if (err instanceof Error) await this.error(err.message);
+      else if (typeof err === "string") await this.error(err);
     }
   }
 
@@ -207,12 +208,12 @@ class Process {
 
       const list = await listEverything(channelId);
       const message = getMessage(Message.LIST, list);
-      this.interaction.editReply(message);
+      await editReply(this.interaction, message);
 
       this.terminate(this.interaction.user.id);
     } catch (err) {
-      if (err instanceof Error) this.error(err.message);
-      else if (typeof err === "string") this.error(err);
+      if (err instanceof Error) await this.error(err.message);
+      else if (typeof err === "string") await this.error(err);
     }
   }
 
@@ -222,8 +223,8 @@ class Process {
 
     if (isCommandCancel) {
       await this.interaction.deleteReply();
-      await interaction.reply(message);
-    } else await interaction.editReply(message);
+      await reply(interaction, message);
+    } else await editReply(interaction, message);
 
     setTimeout(() => {
       interaction.deleteReply();
@@ -232,10 +233,10 @@ class Process {
     this.terminate(this.interaction.user.id);
   }
 
-  error(err: string) {
+  async error(err: string) {
     logger.error(err);
     const message = getMessage(Message.ERROR, err);
-    this.interaction.editReply(message);
+    await editReply(this.interaction, message);
     this.terminate(this.interaction.user.id);
   }
 }

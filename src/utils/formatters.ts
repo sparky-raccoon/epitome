@@ -64,9 +64,27 @@ const formatTagListToString = (list: (Tag | TagCreation)[]): string => {
   return description;
 };
 
+const splitDescriptionInMultipleMessages = (description: string): string[] => {
+  const messages: string[] = [];
+  const descriptionLines = description.split("\n");
+  let currentMessage = "";
+
+  descriptionLines.forEach((line) => {
+    if (currentMessage.length + line.length > 2000) {
+      messages.push(currentMessage);
+      currentMessage = "";
+    }
+    currentMessage += line + "\n";
+  });
+  messages.push(currentMessage);
+
+  return messages;
+};
+
 export {
   formatSourceToBlockQuote,
   formatSourceListToBlockQuotes,
   formatFullListToDescription,
   formatTagListToString,
+  splitDescriptionInMultipleMessages,
 };
