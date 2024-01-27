@@ -28,7 +28,6 @@ import {
   splitDescriptionInMultipleMessages,
 } from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
-import { selectSavedSourcesOrTagsMenu } from "@/components/select-menu";
 
 const getColorForSourceType = (sourceType: string): ColorResolvable => {
   switch (sourceType) {
@@ -61,7 +60,6 @@ const ADD_SOURCE_TITLE = "Ajout d’une ou plusieurs source.s d'information";
 const ADD_TAG_TITLE = "Ajout d’un ou de plusieurs tag.s / filtre.s";
 const DELETE_SOURCE_TITLE = "Suppression d'une source ou d'un tag / filtre configuré";
 const DELETE_TAG_TITLE = "Suppression d’un tag / filtre configuré";
-const DELETE_SOURCE_OR_TAG_TITLE = "Suppression d’une source ou d’un tag / filtre configuré";
 
 const buildDiscordMessage = (
   isFirstEntry = true,
@@ -105,10 +103,14 @@ const getMessage = (type: Message, data?: MessageData): any => {
         "à partir d'une liste de tags choisis. Ainsi, une même source peut être suivie dans plusieurs " +
         "serveurs pour des raisons différentes. \n\n" +
         "Voici la liste des commandes auxquelles je réponds :\n" +
-        `▪︎ ${bold("/add-source <url>")} - pour ajouter une nouvelle source au salon présent.\n` +
+        `▪︎ ${bold(
+          "/add-source <urls>"
+        )} - pour ajouter une ou plusieurs source au salon présent.\n` +
         `▪︎ ${bold("/add-filter <names>")} ` +
         `- pour ajouter un ou plusieurs tag.s / filtre.s au salon présent.\n` +
-        `▪︎ ${bold("/delete")} - pour supprimer une source ou un tag associé au salon présent.\n` +
+        `▪︎ ${bold(
+          "/delete <nom>"
+        )} - pour supprimer une source ou un tag associé au salon présent via leurs identifiants.\n` +
         `▪︎ ${bold("/cancel")} - pour annuler une procédure d’ajout ou de suppression en cours.\n` +
         `▪︎ ${bold("/list")} ` +
         `- pour lister l’ensemble des sources & tags associés à ce salon.\n` +
@@ -203,14 +205,6 @@ const getMessage = (type: Message, data?: MessageData): any => {
       description = "Aucune URL valide n'a été fournie.";
       break;
     }
-    case Message.DELETE_SELECT: {
-      if (!isSourceAndTagList(data)) throw new Error("Invalid data type.");
-      title += DELETE_SOURCE_OR_TAG_TITLE;
-      description =
-        "Sélectionne dans la liste ci-dessous la source ou le tag / filtre que tu souhaites supprimer :";
-      component = selectSavedSourcesOrTagsMenu(data);
-      break;
-    }
     case Message.DELETE_CONFIRM: {
       if (isSource(data)) {
         title += DELETE_SOURCE_TITLE;
@@ -236,11 +230,6 @@ const getMessage = (type: Message, data?: MessageData): any => {
       description =
         `Les publications ne seront plus filtrées selon ce tag. ` +
         `Pour retrouver la liste des tags présentement configurés, appelle la commande \`/list\``;
-      break;
-    }
-    case Message.DELETE_NOTHING_SAVED: {
-      title += DELETE_SOURCE_OR_TAG_TITLE;
-      description = "Aucune source ou tag n'a été configuré pour ce salon.";
       break;
     }
     case Message.CANCEL: {

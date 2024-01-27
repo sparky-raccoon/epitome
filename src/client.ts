@@ -9,6 +9,7 @@ import {
   initDatabase,
   cleanDatabaseOnGuildLeave,
   cleanDatabaseOnChannelLeave,
+  listEverything,
 } from "@/bdd/operator";
 import { Sequelize } from "sequelize";
 
@@ -73,6 +74,19 @@ const initDiscordClient = (
               flows[userId].cancel(interaction);
             }
           }
+        }
+      } else if (interaction.isAutocomplete()) {
+        const { channelId, options } = interaction;
+        const query = options.getString("nom")?.toLocaleLowerCase();
+
+        if (query && query.length > 0) {
+          const sourceOrTagList = await listEverything(channelId);
+          const suggestions = sourceOrTagList.filter(({ name }) => {
+            const sourceOrTagName = name.toLocaleLowerCase();
+            return sourceOrTagName.includes(query);
+          });
+          const choices = suggestions.map(({ name }) => ({ name, value: name })).slice(0, 25);
+          await interaction.respond(choices);
         }
       }
     });

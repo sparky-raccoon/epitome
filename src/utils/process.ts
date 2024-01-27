@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, ComponentType, Message as DiscordMessage } from "discord.js";
+import { ChatInputCommandInteraction, ComponentType } from "discord.js";
 import { Command, Message, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
 import {
   findDuplicateSourceWithUrl,
@@ -8,6 +8,7 @@ import {
   deleteSource,
   listEverything,
   deleteTag,
+  getSourceOrTagWithName,
 } from "@/bdd/operator";
 import { getRssNameFromUrl } from "@/utils/parser";
 import { getMessage } from "@/utils/messages";
@@ -148,33 +149,15 @@ class Process {
     try {
       await this.interaction.deferReply();
 
-      const { guildId, channelId } = this.interaction;
-      if (!guildId || !channelId) throw new Error(INTERNAL_ERROR);
+      const { guildId, channelId, options } = this.interaction;
+      const name = options.getString("nom");
+      if (!guildId || !channelId || !name) throw new Error(INTERNAL_ERROR);
 
-      let message;
-      const fullList = await listEverything(channelId);
+      const selectedSourceOrTag = await getSourceOrTagWithName(name);
+      if (!selectedSourceOrTag) throw new Error("Ce filtre ou cette source n'existe pas, ou plus.");
 
-      if (fullList.length === 0) {
-        message = getMessage(Message.DELETE_NOTHING_SAVED);
-        await editReply(this.interaction, message);
-        this.terminate(this.interaction.user.id);
-        return;
-      }
-
-      message = getMessage(Message.DELETE_SELECT, fullList);
-
-      let response = await editReply(this.interaction, message);
-      const selectInteraction = await response.awaitMessageComponent({
-        time: TIMEOUT,
-        componentType: ComponentType.StringSelect,
-      });
-      const selectedId = selectInteraction.values[0];
-      const selectedSourceOrTag = fullList.find((sourceOrTag) => sourceOrTag.id === selectedId);
-
-      if (!selectedSourceOrTag) throw new Error(INTERNAL_ERROR);
-
-      message = getMessage(Message.DELETE_CONFIRM, selectedSourceOrTag);
-      response = (await selectInteraction.update(message[0])) as unknown as DiscordMessage;
+      let message = getMessage(Message.DELETE_CONFIRM, selectedSourceOrTag);
+      const response = await editReply(this.interaction, message);
 
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,

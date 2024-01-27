@@ -90,6 +90,16 @@ const deleteTag = async (guildId: string, channelId: string, name: string): Prom
   if (guildChannels.length === 0) Models.Guild.destroy({ force: true, where: { id: guildId } });
 };
 
+const getSourceOrTagWithName = async (name: string): Promise<Source | Tag | null> => {
+  const source = await Models.Source.findOne({ where: { name } });
+  if (source) return source;
+
+  const tag = await Models.Tag.findOne({ where: { name } });
+  if (tag) return tag;
+
+  return null;
+};
+
 const listChannelIds = async (): Promise<string[]> => {
   const channels = await Models.Channel.findAll();
   return channels.map((c) => c.id);
@@ -130,4 +140,5 @@ export {
   listChannelTags,
   listEverything,
   updateSourceTimestamp,
+  getSourceOrTagWithName,
 };
