@@ -3,9 +3,9 @@ import initDiscordClient from "@/client";
 import logger from "@/utils/logger";
 
 dotenv.config();
-const { NODE_ENV, TOKEN, TOKEN_DEV, CLIENT_ID, CLIENT_ID_DEV } = process.env;
-const token = NODE_ENV === "development" ? TOKEN_DEV : TOKEN;
-const clientId = NODE_ENV === "development" ? CLIENT_ID_DEV : CLIENT_ID;
+const { NODE_ENV, DISCORD_SECRET, DISCORD_SECRET_DEV, DISCORD_CLIENT_ID, DISCORD_CLIENT_ID_DEV } = process.env;
+const token = NODE_ENV === "development" ? DISCORD_SECRET_DEV : DISCORD_SECRET;
+const clientId = NODE_ENV === "development" ? DISCORD_CLIENT_ID_DEV : DISCORD_CLIENT_ID;
 const { client, sequelize } = initDiscordClient(clientId, token);
 
 const cleanup = () => {
