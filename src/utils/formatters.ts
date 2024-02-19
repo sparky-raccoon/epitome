@@ -2,6 +2,7 @@ import { blockQuote } from "discord.js";
 import { Source, SourceCreation } from "@/bdd/models/source";
 import { Tag, TagCreation } from "@/bdd/models/tag";
 import { isSource, isSourceCreation, isTag } from "./types";
+import { FSource } from "@/bdd/collections/source";
 
 const formatSourceToBlockQuote = (source: Source | SourceCreation): `>>> ${string}` => {
   const { type, name, url } = source;
@@ -22,7 +23,7 @@ const formatSourceListToBlockQuotes = (list: (Source | SourceCreation)[]): strin
   return blockQuote(description);
 };
 
-const formatFullListToDescription = (list: (Source | SourceCreation | Tag)[]): string => {
+const formatFullListToDescription = (list: (Source | SourceCreation | FSource | Tag)[]): string => {
   let description = "";
   type ByTypeSourceList = { [type: string]: { name: string; url: string }[] };
 

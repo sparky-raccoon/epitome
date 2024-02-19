@@ -1,9 +1,7 @@
 import { ChatInputCommandInteraction, ComponentType } from "discord.js";
 import { Command, Message, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
 import {
-  findDuplicateSourceWithUrl,
   findDuplicateTagWithName,
-  addSource,
   addTag,
   deleteSource,
   listEverything,
@@ -12,11 +10,11 @@ import {
 } from "@/bdd/operator";
 import { getRssNameFromUrl } from "@/utils/parser";
 import { getMessage } from "@/utils/messages";
-import { Source, SourceCreation } from "@/bdd/models/source";
 import { Tag, TagCreation } from "@/bdd/models/tag";
 import logger from "@/utils/logger";
 import { reply, editReply } from "@/utils/replier";
 import { isSource, isTag } from "@/utils/types";
+import FirestoreSource from "@/bdd/collections/source";
 
 const TIMEOUT = 60000;
 
@@ -56,14 +54,22 @@ class Process {
       if (!guildId || !channelId || !sources || sources.length === 0)
         throw new Error(INTERNAL_ERROR);
 
-      const duplicates: Source[] = [];
-      const nonDuplicates: SourceCreation[] = [];
+      const duplicates = []
+      const nonDuplicates = []
       for (const s of sources) {
-        const duplicate = await findDuplicateSourceWithUrl(channelId, s.url);
-        if (duplicate) duplicates.push(duplicate);
-        else {
-          const name = await getRssNameFromUrl(s.url);
-          if (name) nonDuplicates.push({ ...s, name });
+        const { url } = s
+        const existing = await FirestoreSource.findWithUrl(url);
+        if (existing) {
+          if (existing.channels.includes(channelId)) duplicates.push(existing);
+          else {
+            nonDuplicates.push({
+            ...existing,
+            channels: [...existing.channels, channelId]
+           });
+          }
+        } else {
+          const name = await getRssNameFromUrl(url);
+          if (name) nonDuplicates.push({ url, name, channels: [channelId] });
         }
       }
 
@@ -79,7 +85,7 @@ class Process {
         return;
       }
 
-      let message = getMessage(Message.ADD_CONFIRM, { new: nonDuplicates, existing: duplicates });
+      let message = getMessage(Message.ADD_CONFIRM, { type: 'source', new: nonDuplicates, existing: duplicates });
       const response = await editReply(this.interaction, message);
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
@@ -87,7 +93,7 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        for (const source of nonDuplicates) await addSource(guildId, channelId, source);
+        for (const source of nonDuplicates) await FirestoreSource.add(source);
         message = getMessage(Message.ADD_SUCCESS_SOURCE);
         await confirmInteraction.update(message[0]);
       } else this.cancel(this.interaction);

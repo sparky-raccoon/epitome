@@ -18,7 +18,6 @@ import {
   isTagList,
   isTagCreationList,
   isSourceList,
-  isSourceCreationList,
 } from "@/utils/types";
 import {
   formatFullListToDescription,
@@ -28,6 +27,7 @@ import {
   splitDescriptionInMultipleMessages,
 } from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
+import { FSource } from "@/bdd/collections/source";
 
 const getColorForSourceType = (sourceType: string): ColorResolvable => {
   switch (sourceType) {
@@ -53,6 +53,7 @@ type MessageData =
   | Tag[]
   | Publication
   | { new: TagCreation[]; existing: Tag[] }
+  | { new: FSource[]; existing: FSource[]; type: 'source' }
   | Error;
 type MessageComponent = ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>;
 
@@ -146,9 +147,9 @@ const getMessage = (type: Message, data?: MessageData): any => {
       break;
     }
     case Message.ADD_CONFIRM: {
-      if (typeof data === "object" && "new" in data && "existing" in data) {
+      if (typeof data === "object" && "new" in data && "existing" in data && "type" in data) {
         const { new: toAdd, existing } = data;
-        if (isSourceCreationList(toAdd) && isSourceList(existing)) {
+        if (data.type === 'source') {
           title += ADD_SOURCE_TITLE;
           description =
             `Tu es sur le point d'ajouter les sources suivantes :\n\n` +
