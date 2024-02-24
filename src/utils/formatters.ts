@@ -1,8 +1,6 @@
 import { blockQuote } from "discord.js";
 import { Source, SourceCreation } from "@/bdd/models/source";
-import { Tag } from "@/bdd/models/tag";
-import { isSource, isSourceCreation, isTag } from "./types";
-import { FSource } from "@/bdd/collections/source";
+import { FSource, isFSource } from "@/bdd/collections/source";
 
 const formatSourceToBlockQuote = (source: Source | SourceCreation): `>>> ${string}` => {
   const { type, name, url } = source;
@@ -23,19 +21,19 @@ const formatSourceListToBlockQuotes = (list: (Source | SourceCreation)[]): strin
   return blockQuote(description);
 };
 
-const formatFullListToDescription = (list: (Source | SourceCreation | FSource | Tag | string)[]): string => {
+const formatFullListToDescription = (list: (FSource | string)[]): string => {
   let description = "";
   type ByTypeSourceList = { [type: string]: { name: string; url: string }[] };
 
   const byTypeSourceList = list.reduce((acc: ByTypeSourceList, sourceOrTag) => {
-    if (isSource(sourceOrTag) || isSourceCreation(sourceOrTag)) {
+    if (isFSource(sourceOrTag)) {
       const { type, name, url } = sourceOrTag;
       const formattedType = `Flux ${type?.toUpperCase() || "RSS"}`;
       if (!acc[formattedType]) acc[formattedType] = [];
       acc[formattedType].push({ name, url });
-    } else if (isTag(sourceOrTag)) {
+    } else if (typeof sourceOrTag === "string") {
       if (!acc["Filtres"]) acc["Filtres"] = [];
-      acc["Filtres"].push({ name: sourceOrTag.name, url: "" });
+      acc["Filtres"].push({ name: sourceOrTag, url: "" });
     }
 
     return acc;

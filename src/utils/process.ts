@@ -1,17 +1,10 @@
 import { ChatInputCommandInteraction, ComponentType } from "discord.js";
 import { Command, Message, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
-import {
-  deleteSource,
-  listEverything,
-  deleteTag,
-  getSourceOrTagWithName,
-} from "@/bdd/operator";
 import { getRssNameFromUrl } from "@/utils/parser";
 import { getMessage } from "@/utils/messages";
 import logger from "@/utils/logger";
 import { reply, editReply } from "@/utils/replier";
-import { isSource, isTag } from "@/utils/types";
-import FirestoreSource from "@/bdd/collections/source";
+import FirestoreSource, { FSource } from "@/bdd/collections/source";
 import FirestoreChannel from "@/bdd/collections/channel";
 
 const TIMEOUT = 60000;
@@ -160,23 +153,29 @@ class Process {
       const name = options.getString("nom");
       if (!guildId || !channelId || !name) throw new Error(INTERNAL_ERROR);
 
-      const selectedSourceOrTag = await getSourceOrTagWithName(name);
-      if (!selectedSourceOrTag) throw new Error("Ce filtre ou cette source n'existe pas, ou plus.");
+      let selectedSourceOrTag: FSource | string | null = await FirestoreSource.findWithName(name);
+      let type: 'source' | 'filter';
+      if (!selectedSourceOrTag) {
+        const existingTags = await FirestoreChannel.getFilters(channelId);
+        if (existingTags.includes(name)) selectedSourceOrTag = name;
+        if (!selectedSourceOrTag) throw new Error("Ce filtre ou cette source n'existe pas, ou plus.");
+        else type = "filter";
+      } else type = "source";
 
-      let message = getMessage(Message.DELETE_CONFIRM, selectedSourceOrTag);
+      let message = getMessage(Message.DELETE_CONFIRM, { delete: selectedSourceOrTag, type });
       const response = await editReply(this.interaction, message);
-
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
         componentType: ComponentType.Button,
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        if (isSource(selectedSourceOrTag)) {
-          await deleteSource(guildId, channelId, selectedSourceOrTag.id);
+        if (type === "source") {
+          console.log(selectedSourceOrTag)
+          await FirestoreSource.delete((selectedSourceOrTag as FSource).id);
           message = getMessage(Message.DELETE_SUCCESS_SOURCE, selectedSourceOrTag);
-        } else if (isTag(selectedSourceOrTag)) {
-          await deleteTag(guildId, channelId, selectedSourceOrTag.name);
+        } else if (type === "filter") {
+          await FirestoreChannel.deleteFilter(channelId, selectedSourceOrTag as string);
           message = getMessage(Message.DELETE_SUCCESS_TAG, selectedSourceOrTag);
         }
         await confirmInteraction.update(message[0]);
@@ -196,7 +195,11 @@ class Process {
 
       await this.interaction.deferReply();
 
-      const list = await listEverything(channelId);
+      const sourceList = await FirestoreSource.findWithChannelId(channelId);
+      const filterList = await FirestoreChannel.getFilters(channelId);
+      const list = [ ...sourceList, ...filterList ]
+      console.log(list)
+
       const message = getMessage(Message.LIST, list);
       await editReply(this.interaction, message);
 

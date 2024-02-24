@@ -12,9 +12,6 @@ import { Tag, TagCreation } from "@/bdd/models/tag";
 import {
   Publication,
   isPublication,
-  isSource,
-  isTag,
-  isSourceAndTagList,
 } from "@/utils/types";
 import {
   formatFullListToDescription,
@@ -49,10 +46,12 @@ type MessageData =
   | TagCreation[]
   | Tag[]
   | Publication
+  | (FSource | string)[]
+  | { delete: FSource | string; type: 'source' | 'filter' }
   | { new: string[]; existing: string[]; type: 'filter' }
   | { new: FSource[]; existing: FSource[]; type: 'source' }
-  | { duplicates: FSource[]; type: 'source'}
-  | { duplicates: string[]; type: 'filter'}
+  | { duplicates: FSource[]; type: 'source' }
+  | { duplicates: string[]; type: 'filter' }
   | Error;
 type MessageComponent = ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>;
 
@@ -139,10 +138,10 @@ const getMessage = (type: Message, data?: MessageData): any => {
       break;
     }
     case Message.LIST: {
-      if (!isSourceAndTagList(data)) throw new Error("Invalid data type.");
+      if (!data || !Array.isArray(data)) throw new Error("Invalid data type.");
       title += "Liste des sources suivies & tags configurés";
       if (data.length === 0) description = "Aucune configuration connue pour ce salon.";
-      else description = formatFullListToDescription(data);
+      else description = formatFullListToDescription(data as (FSource | string)[]);
       break;
     }
     case Message.ADD_CONFIRM: {
@@ -197,7 +196,7 @@ const getMessage = (type: Message, data?: MessageData): any => {
         title += ADD_TAG_TITLE;
         description =
           "Il semblerait que ces tags soient déjà configurés : " + formatTagListToString(data.duplicates);
-      } else throw new Error("Invalid data type.");
+      }
       break;
     }
     case Message.ADD_NO_VALID_URL: {
@@ -206,15 +205,17 @@ const getMessage = (type: Message, data?: MessageData): any => {
       break;
     }
     case Message.DELETE_CONFIRM: {
-      if (isSource(data)) {
+      if (!data || typeof data !== "object") throw new Error("Invalid data type.");
+      if (!("delete" in data) || !("type" in data)) throw new Error("Invalid data type.");
+      if (data.type === 'source') {
         title += DELETE_SOURCE_TITLE;
         description =
           "La source de publications suivante est sur le point d'être supprimée :\n" +
-          formatSourceToBlockQuote(data);
-      } else if (isTag(data)) {
+          formatSourceToBlockQuote(data.delete as FSource);
+      } else if (data.type === 'filter') {
         title += DELETE_TAG_TITLE;
-        description = `Le tag suivant est sur le point d'être supprimé : ${bold(data.name)}`;
-      } else throw new Error("Invalid data type.");
+        description = `Le tag suivant est sur le point d'être supprimé : ${bold(data.delete as string)}`;
+      }
       component = confirmOrCancelButton();
       break;
     }

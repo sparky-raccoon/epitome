@@ -39,4 +39,12 @@ export default class Channel {
         const filters = [...channel.filters, ...newFilters];
         await setDoc(doc(db, "channels", id), { ...channel, filters });
     }
+
+    static deleteFilter = async (id: string, filter: string) => {
+        const channel = await Channel.findWithId(id);
+        if (!channel) return;
+
+        const filters = channel.filters.filter((f) => f !== filter);
+        await setDoc(doc(db, "channels", id), { ...channel, filters });
+    }
 }
