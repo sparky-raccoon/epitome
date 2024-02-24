@@ -42,14 +42,6 @@ const isSource = (source: unknown): source is Source => {
   return isSourceCreation(source) && "id" in source;
 };
 
-const isSourceList = (sourceList: unknown): sourceList is Source[] => {
-  if (!sourceList || !Array.isArray(sourceList)) {
-    return false;
-  }
-
-  return sourceList.every(isSource);
-};
-
 const isTagCreation = (tagCreation: unknown): tagCreation is TagCreation => {
   if (!tagCreation || typeof tagCreation !== "object") {
     return false;
@@ -91,7 +83,6 @@ export {
   isPublication,
   isSource,
   isSourceCreation,
-  isSourceList,
   isTag,
   isTagCreation,
   isTagCreationList,

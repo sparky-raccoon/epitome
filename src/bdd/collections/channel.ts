@@ -24,4 +24,19 @@ export default class Channel {
         const channel = channelSnap.data() as FChannel;
         return channel;
     }
+
+    static getFilters = async (id: string) => {
+        const channel = await Channel.findWithId(id);
+        if (!channel) return [];
+
+        return channel.filters;
+    }
+
+    static addFilters = async (id: string, newFilters: string[]) => {
+        const channel = await Channel.findWithId(id);
+        if (!channel) return;
+
+        const filters = [...channel.filters, ...newFilters];
+        await setDoc(doc(db, "channels", id), { ...channel, filters });
+    }
 }

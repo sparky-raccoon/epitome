@@ -15,9 +15,6 @@ import {
   isSource,
   isTag,
   isSourceAndTagList,
-  isTagList,
-  isTagCreationList,
-  isSourceList,
 } from "@/utils/types";
 import {
   formatFullListToDescription,
@@ -52,8 +49,10 @@ type MessageData =
   | TagCreation[]
   | Tag[]
   | Publication
-  | { new: TagCreation[]; existing: Tag[] }
+  | { new: string[]; existing: string[]; type: 'filter' }
   | { new: FSource[]; existing: FSource[]; type: 'source' }
+  | { duplicates: FSource[]; type: 'source'}
+  | { duplicates: string[]; type: 'filter'}
   | Error;
 type MessageComponent = ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>;
 
@@ -147,30 +146,29 @@ const getMessage = (type: Message, data?: MessageData): any => {
       break;
     }
     case Message.ADD_CONFIRM: {
-      if (typeof data === "object" && "new" in data && "existing" in data && "type" in data) {
-        const { new: toAdd, existing } = data;
-        if (data.type === 'source') {
-          title += ADD_SOURCE_TITLE;
-          description =
-            `Tu es sur le point d'ajouter les sources suivantes :\n\n` +
-            formatFullListToDescription(toAdd) +
-            (existing.length > 0
-              ? "\nLes sources suivantes ont déjà été configurées :\n\n" +
-                formatFullListToDescription(existing)
-              : "");
-          component = confirmOrCancelButton();
-        } else if (isTagCreationList(toAdd) && isTagList(existing)) {
-          title += ADD_TAG_TITLE;
-          description =
-            "Tu es sur le point d’ajouter les tags suivants : \n" +
-            formatTagListToString(toAdd) +
-            (existing.length > 0
-              ? "\nLes tags suivants ont déjà configurés : " + formatTagListToString(existing)
-              : "");
-          component = confirmOrCancelButton();
-        } else throw new Error("Invalid data type.");
-      } else throw new Error("Invalid data type.");
-
+      if (!data || typeof data !== "object") throw new Error("Invalid data type.");
+      if (!("new" in data) || !("existing" in data)) throw new Error("Invalid data type.");
+      const { new: toAdd, existing } = data;
+      if (data.type === 'source') {
+        title += ADD_SOURCE_TITLE;
+        description =
+          `Tu es sur le point d'ajouter les sources suivantes :\n\n` +
+          formatFullListToDescription(toAdd) +
+          (existing.length > 0
+            ? "\nLes sources suivantes ont déjà été configurées :\n\n" +
+              formatFullListToDescription(existing)
+            : "");
+        component = confirmOrCancelButton();
+      } else if (data.type === 'filter') {
+        title += ADD_TAG_TITLE;
+        description =
+          "Tu es sur le point d’ajouter les tags suivants : \n" +
+          formatTagListToString(toAdd as string[]) +
+          (existing.length > 0
+            ? "\nLes tags suivants ont déjà configurés : " + formatTagListToString(existing as string[])
+            : "");
+        component = confirmOrCancelButton();
+      }
       break;
     }
     case Message.ADD_SUCCESS_SOURCE: {
@@ -188,15 +186,17 @@ const getMessage = (type: Message, data?: MessageData): any => {
       break;
     }
     case Message.ADD_ALREADY_EXISTS: {
-      if (isSourceList(data)) {
+      if (!data || typeof data !== "object") throw new Error("Invalid data type.");
+      if (!("duplicates" in data)) throw new Error("Invalid data type.");
+      if (data.type === 'source') {
         title += ADD_SOURCE_TITLE;
         description =
           "Il semblerait que ces sources soient déjà suivies :\n\n" +
-          formatSourceListToBlockQuotes(data);
-      } else if (isTagList(data)) {
+          formatSourceListToBlockQuotes(data.duplicates);
+      } else if (data.type === 'filter') {
         title += ADD_TAG_TITLE;
         description =
-          "Il semblerait que ces tags soient déjà configurés : " + formatTagListToString(data);
+          "Il semblerait que ces tags soient déjà configurés : " + formatTagListToString(data.duplicates);
       } else throw new Error("Invalid data type.");
       break;
     }

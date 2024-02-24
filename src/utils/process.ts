@@ -1,8 +1,6 @@
 import { ChatInputCommandInteraction, ComponentType } from "discord.js";
 import { Command, Message, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
 import {
-  findDuplicateTagWithName,
-  addTag,
   deleteSource,
   listEverything,
   deleteTag,
@@ -10,7 +8,6 @@ import {
 } from "@/bdd/operator";
 import { getRssNameFromUrl } from "@/utils/parser";
 import { getMessage } from "@/utils/messages";
-import { Tag, TagCreation } from "@/bdd/models/tag";
 import logger from "@/utils/logger";
 import { reply, editReply } from "@/utils/replier";
 import { isSource, isTag } from "@/utils/types";
@@ -115,25 +112,27 @@ class Process {
       const tags = this.interaction.options
         .getString("names")
         ?.split(" ")
-        .map((name) => ({ name }));
       if (!guildId || !channelId || !tags || tags.length === 0) throw new Error(INTERNAL_ERROR);
-
-      const duplicates: Tag[] = [];
-      const nonDuplicates: TagCreation[] = [];
-      for (const t of tags) {
-        const duplicate = await findDuplicateTagWithName(channelId, t.name);
-        if (duplicate) duplicates.push(duplicate);
-        else nonDuplicates.push(t);
-      }
+      
+      const duplicates = [];
+      const nonDuplicates = [];
+      const existingTags = await FirestoreChannel.getFilters(channelId);
+      if (existingTags.length > 0) {
+        for (const t of tags) {
+          const duplicate = existingTags.find((tag) => tag === t);
+          if (duplicate) duplicates.push(duplicate);
+          else nonDuplicates.push(t);
+        }
+      } else nonDuplicates.push(...tags);
 
       if (duplicates.length === tags.length) {
-        const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicates);
+        const message = getMessage(Message.ADD_ALREADY_EXISTS, { type: 'filter', duplicates });
         await editReply(this.interaction, message);
         this.terminate(this.interaction.user.id);
         return;
       }
 
-      let message = getMessage(Message.ADD_CONFIRM, { new: nonDuplicates, existing: duplicates });
+      let message = getMessage(Message.ADD_CONFIRM, { type: 'filter', new: nonDuplicates, existing: duplicates });
       const response = await editReply(this.interaction, message);
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
@@ -141,7 +140,7 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        for (const tag of nonDuplicates) await addTag(guildId, channelId, tag);
+        await FirestoreChannel.addFilters(channelId, nonDuplicates);
         message = getMessage(Message.ADD_SUCCESS_TAG);
         await confirmInteraction.update(message[0]);
       } else this.cancel(this.interaction);
