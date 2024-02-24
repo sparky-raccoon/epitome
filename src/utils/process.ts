@@ -85,7 +85,7 @@ class Process {
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
         await FirestoreChannel.add({ id: channelId, filters: [] });
-        for (const source of nonDuplicates) await FirestoreSource.add(source as FSource);
+        for (const source of nonDuplicates) await FirestoreSource.add(source as FSource, channelId);
         message = getMessage(Message.ADD_SUCCESS_SOURCE);
         await confirmInteraction.update(message[0]);
       } else this.cancel(this.interaction);

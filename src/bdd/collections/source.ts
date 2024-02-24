@@ -21,11 +21,16 @@ const isFSource = (source: unknown): source is FSource => {
 export { FSource, isFSource }
 
 export default class Source {
-    static add = async (source: FSource) => {
-        if (!source.id) source.id = uuidv4()
-        if (!source.type) source.type = "rss"
-
-        await setDoc(doc(db, "sources", source.id), source);
+    static add = async (source: FSource, channelId: string) => {
+        const existingSource = await this.findWithUrl(source.url);
+        if (existingSource) {
+            const channels = [...existingSource.channels, channelId];
+            await setDoc(doc(db, "sources", existingSource.id), { ...existingSource, channels });
+        } else {
+            source.id = uuidv4();
+            source.type = "rss";
+            await setDoc(doc(db, "sources", source.id), source);
+        }
     }
 
     static findWithUrl = async (url :string) => {
@@ -58,14 +63,6 @@ export default class Source {
 
         const sources = querySnapshot.docs.map((doc) => doc.data());
         return sources;
-    }
-
-    static addChannelToList = async (sourceId: string, channelId: string) => {
-        const source = await this.findWithUrl(sourceId);
-        if (!source) return;
-
-        const channels = [...source.channels, channelId];
-        await setDoc(doc(db, "sources", source.id), { ...source, channels });
     }
 
     static removeChannelFromList = async (channelId: string) => {
