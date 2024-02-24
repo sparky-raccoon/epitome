@@ -6,17 +6,12 @@ dotenv.config();
 const { NODE_ENV, DISCORD_TOKEN, DISCORD_TOKEN_DEV, DISCORD_CLIENT_ID, DISCORD_CLIENT_ID_DEV } = process.env;
 const token = NODE_ENV === "development" ? DISCORD_TOKEN_DEV : DISCORD_TOKEN;
 const clientId = NODE_ENV === "development" ? DISCORD_CLIENT_ID_DEV : DISCORD_CLIENT_ID;
-const { client, sequelize } = initDiscordClient(clientId, token);
+const { client } = initDiscordClient(clientId, token);
 
 const cleanup = () => {
   logger.info("Destroying Discord client");
   client.removeAllListeners();
   client.destroy();
-
-  if (sequelize) {
-    logger.info("Closing database connection");
-    sequelize.close();
-  }
 };
 
 const handleShutDown = () => {

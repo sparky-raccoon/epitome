@@ -5,12 +5,6 @@ import { Process } from "@/utils/process";
 import logger from "@/utils/logger";
 import { reply } from "@/utils/replier";
 import initCronJob from "@/cron";
-import {
-  initDatabase,
-  cleanDatabaseOnGuildLeave,
-  cleanDatabaseOnChannelLeave,
-} from "@/bdd/operator";
-import { Sequelize } from "sequelize";
 import FirestoreSource from "@/bdd/collections/source";
 import FirestoreChannel from "@/bdd/collections/channel";
 
@@ -19,30 +13,36 @@ const initDiscordClient = (
   token?: string
 ): {
   client: Client;
-  sequelize: Sequelize | null;
 } => {
   if (!token || !clientId) throw new Error("Missing environment variables");
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-  let sequelize = null;
 
   client.once(Events.ClientReady, async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
 
-    sequelize = await initDatabase();
     initCronJob(client);
 
     client.on(Events.GuildCreate, async (guild) => {
       logger.info(`Joined new guild: ${guild.name} (${guild.id})`);
+      const discordServer = client.guilds.cache.get(guild.id);
+      const channels = discordServer?.channels ? JSON.parse(
+        JSON.stringify(discordServer.channels)
+      ).guild.channels : [];
+      for (const channel of channels) {
+        if (channel.type === "GUILD_TEXT") {
+          await FirestoreChannel.delete(channel.id, true);
+        }
+      }
     });
 
     client.on(Events.GuildDelete, async (guild) => {
       logger.info(`Left guild: $${guild.id}`);
-      await cleanDatabaseOnGuildLeave(guild.id);
     });
 
     client.on(Events.ChannelDelete, async (channel) => {
       logger.info(`Left channel: ${channel.id}`);
-      await cleanDatabaseOnChannelLeave(channel.id);
+      await FirestoreChannel.delete(channel.id);
+      await FirestoreSource.removeChannelFromList(channel.id);
     });
 
     const flows: { [userId: string]: Process } = {};
@@ -96,7 +96,7 @@ const initDiscordClient = (
 
   client.login(token);
 
-  return { client, sequelize };
+  return { client };
 };
 
 export default initDiscordClient;

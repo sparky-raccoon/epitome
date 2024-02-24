@@ -65,7 +65,7 @@ class Process {
       }
 
       if (duplicates.length === sources.length) {
-        const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicates);
+        const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicates as FSource[]);
         await editReply(this.interaction, message);
         this.terminate(this.interaction.user.id);
         return;
@@ -76,7 +76,7 @@ class Process {
         return;
       }
 
-      let message = getMessage(Message.ADD_CONFIRM, { type: 'source', new: nonDuplicates, existing: duplicates });
+      let message = getMessage(Message.ADD_CONFIRM, { type: 'source', new: nonDuplicates as FSource[], existing: duplicates as FSource[] });
       const response = await editReply(this.interaction, message);
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
@@ -85,7 +85,7 @@ class Process {
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
         await FirestoreChannel.add({ id: channelId, filters: [] });
-        for (const source of nonDuplicates) await FirestoreSource.add(source);
+        for (const source of nonDuplicates) await FirestoreSource.add(source as FSource);
         message = getMessage(Message.ADD_SUCCESS_SOURCE);
         await confirmInteraction.update(message[0]);
       } else this.cancel(this.interaction);
@@ -153,7 +153,7 @@ class Process {
       const name = options.getString("nom");
       if (!guildId || !channelId || !name) throw new Error(INTERNAL_ERROR);
 
-      let selectedSourceOrTag: FSource | string | null = await FirestoreSource.findWithName(name);
+      let selectedSourceOrTag: unknown = await FirestoreSource.findWithName(name);
       let type: 'source' | 'filter';
       if (!selectedSourceOrTag) {
         const existingTags = await FirestoreChannel.getFilters(channelId);
@@ -162,7 +162,7 @@ class Process {
         else type = "filter";
       } else type = "source";
 
-      let message = getMessage(Message.DELETE_CONFIRM, { delete: selectedSourceOrTag, type });
+      let message = getMessage(Message.DELETE_CONFIRM, { delete: selectedSourceOrTag as (FSource | string), type });
       const response = await editReply(this.interaction, message);
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
@@ -173,10 +173,10 @@ class Process {
         if (type === "source") {
           console.log(selectedSourceOrTag)
           await FirestoreSource.delete((selectedSourceOrTag as FSource).id);
-          message = getMessage(Message.DELETE_SUCCESS_SOURCE, selectedSourceOrTag);
+          message = getMessage(Message.DELETE_SUCCESS_SOURCE, selectedSourceOrTag as FSource);
         } else if (type === "filter") {
           await FirestoreChannel.deleteFilter(channelId, selectedSourceOrTag as string);
-          message = getMessage(Message.DELETE_SUCCESS_TAG, selectedSourceOrTag);
+          message = getMessage(Message.DELETE_SUCCESS_TAG, selectedSourceOrTag as string);
         }
         await confirmInteraction.update(message[0]);
       } else this.cancel(this.interaction);
@@ -195,8 +195,8 @@ class Process {
 
       await this.interaction.deferReply();
 
-      const sourceList = await FirestoreSource.findWithChannelId(channelId);
-      const filterList = await FirestoreChannel.getFilters(channelId);
+      const sourceList = await FirestoreSource.findWithChannelId(channelId) as FSource[];
+      const filterList = await FirestoreChannel.getFilters(channelId) as string[];
       const list = [ ...sourceList, ...filterList ]
       console.log(list)
 

@@ -33,7 +33,7 @@ export default class Source {
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return null;
 
-        const source = querySnapshot.docs[0].data() as FSource;
+        const source = querySnapshot.docs[0].data();
         return source;
     }
 
@@ -42,7 +42,7 @@ export default class Source {
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return null;
 
-        const source = querySnapshot.docs[0].data() as FSource;
+        const source = querySnapshot.docs[0].data();
         return source;
     }
 
@@ -56,7 +56,27 @@ export default class Source {
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return [];
 
-        const sources = querySnapshot.docs.map((doc) => doc.data() as FSource);
+        const sources = querySnapshot.docs.map((doc) => doc.data());
         return sources;
+    }
+
+    static addChannelToList = async (sourceId: string, channelId: string) => {
+        const source = await this.findWithUrl(sourceId);
+        if (!source) return;
+
+        const channels = [...source.channels, channelId];
+        await setDoc(doc(db, "sources", source.id), { ...source, channels });
+    }
+
+    static removeChannelFromList = async (channelId: string) => {
+        const q = query(collection(db, "sources"), where("channels", "array-contains", channelId));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) return;
+
+        querySnapshot.forEach(async (s) => {
+            const source = s.data();
+            const channels = source.channels.filter((c: string) => c !== channelId);
+            await setDoc(doc(db, "sources", source.id), { ...source, channels });
+        });
     }
 }

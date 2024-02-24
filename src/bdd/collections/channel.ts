@@ -1,4 +1,4 @@
-import { setDoc, getDoc, doc } from "firebase/firestore";
+import { setDoc, getDoc, deleteDoc, doc } from "firebase/firestore";
 import { firestore as db } from "@/bdd/firestore";
 
 interface FChannel {
@@ -46,5 +46,13 @@ export default class Channel {
 
         const filters = channel.filters.filter((f) => f !== filter);
         await setDoc(doc(db, "channels", id), { ...channel, filters });
+    }
+
+    static delete = async (id: string, failSilently = false) => {
+        try {
+            await deleteDoc(doc(db, "channels", id));
+        } catch (err) {
+            if (!failSilently) throw err;
+        }
     }
 }
