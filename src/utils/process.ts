@@ -15,6 +15,7 @@ import logger from "@/utils/logger";
 import { reply, editReply } from "@/utils/replier";
 import { isSource, isTag } from "@/utils/types";
 import FirestoreSource from "@/bdd/collections/source";
+import FirestoreChannel from "@/bdd/collections/channel";
 
 const TIMEOUT = 60000;
 
@@ -93,6 +94,7 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
+        await FirestoreChannel.add({ id: channelId, filters: [] });
         for (const source of nonDuplicates) await FirestoreSource.add(source);
         message = getMessage(Message.ADD_SUCCESS_SOURCE);
         await confirmInteraction.update(message[0]);
