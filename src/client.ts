@@ -71,7 +71,7 @@ const initDiscordClient = (
         const query = options.getString("nom")?.toLocaleLowerCase();
 
         if (query && query.length > 0) {
-          const sourceList = await FirestoreSource.findWithChannelId(channelId);
+          const sourceList = await FirestoreSource.getWithChannelId(channelId);
           const filterList = await FirestoreChannel.getFilters(channelId);
           const sourceOrTagList = [ ...sourceList.map((s) => s.name), ...filterList ]
           const suggestions = sourceOrTagList.filter(name => {

@@ -30,7 +30,7 @@ export default class FirestoreSource {
         }
     }
 
-    static findWithUrl = async (url :string): Promise<FSource | null> => {
+    static getWithUrl = async (url :string): Promise<FSource | null> => {
         const q = query(collection(db, "sources"), where("url", "==", url));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return null;
@@ -39,7 +39,7 @@ export default class FirestoreSource {
         return source;
     }
 
-    static findWithName = async (name :string): Promise<FSource | null> => {
+    static getWithName = async (name :string): Promise<FSource | null> => {
         const q = query(collection(db, "sources"), where("name", "==", name));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return null;
@@ -48,8 +48,17 @@ export default class FirestoreSource {
         return source;
     }
 
-    static findWithChannelId = async (channelId: string): Promise<FSource[]> => {
+    static getWithChannelId = async (channelId: string): Promise<FSource[]> => {
         const q = query(collection(db, "sources"), where("channels", "array-contains", channelId));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) return [];
+
+        const sources = querySnapshot.docs.map((doc) => doc.data()) as FSource[];
+        return sources;
+    }
+
+    static getAll = async (): Promise<FSource[]> => {
+        const q = query(collection(db, "sources"));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return [];
 
@@ -82,15 +91,6 @@ export default class FirestoreSource {
         if (!sourceId || removals.length === querySnapshot.size) {
             await FirestoreChannel.delete(channelId);
         }
-    }
-
-    static getAll = async (): Promise<FSource[]> => {
-        const q = query(collection(db, "sources"));
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) return [];
-
-        const sources = querySnapshot.docs.map((doc) => doc.data()) as FSource[];
-        return sources;
     }
 
     static updateLastParsedAt = async (id: string): Promise<void> => {

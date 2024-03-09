@@ -8,15 +8,15 @@ interface FChannel {
 }
 
 export { FChannel }
-export default class Channel {
+export default class FirestoreChannel {
     static add = async (channel: FChannel): Promise<void> => {
-        const existingChannel = await Channel.findWithId(channel.id);
+        const existingChannel = await FirestoreChannel.getWithId(channel.id);
         if (existingChannel) return;
 
         await setDoc(doc(db, "channels", channel.id), channel);
     }
 
-    static findWithId = async (id: string): Promise<FChannel | null> => {
+    static getWithId = async (id: string): Promise<FChannel | null> => {
         const channelDoc = doc(db, "channels", id);
         const channelSnap = await getDoc(channelDoc);
         if (!channelSnap.exists()) return null;
@@ -34,7 +34,7 @@ export default class Channel {
     }
 
     static addFilters = async (id: string, newFilters: string[]): Promise<void> => {
-        const channel = await Channel.findWithId(id);
+        const channel = await FirestoreChannel.getWithId(id);
         if (!channel) return;
 
         const filters = [...channel.filters, ...newFilters];
@@ -42,14 +42,14 @@ export default class Channel {
     }
 
     static getFilters = async (id: string): Promise<string[]> => {
-        const channel = await Channel.findWithId(id);
+        const channel = await FirestoreChannel.getWithId(id);
         if (!channel) return [];
 
         return channel.filters;
     }
 
     static deleteFilter = async (id: string, filter: string): Promise<void> => {
-        const channel = await Channel.findWithId(id);
+        const channel = await FirestoreChannel.getWithId(id);
         if (!channel) return;
 
         const filters = channel.filters.filter((f) => f !== filter);

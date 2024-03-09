@@ -50,7 +50,7 @@ class Process {
       const nonDuplicates: (FSource | Source)[] = []
       for (const s of sources) {
         const { url } = s
-        const existing = await FirestoreSource.findWithUrl(url);
+        const existing = await FirestoreSource.getWithUrl(url);
         if (existing) {
           if (existing.channels.includes(channelId)) duplicates.push(existing);
           else nonDuplicates.push(existing);
@@ -149,7 +149,7 @@ class Process {
       const name = options.getString("nom");
       if (!guildId || !channelId || !name) throw new Error(INTERNAL_ERROR);
 
-      let selectedSourceOrTag: FSource | string | null = await FirestoreSource.findWithName(name);
+      let selectedSourceOrTag: FSource | string | null = await FirestoreSource.getWithName(name);
       let type: 'source' | 'filter';
       if (!selectedSourceOrTag) {
         const existingTags = await FirestoreChannel.getFilters(channelId);
@@ -191,7 +191,7 @@ class Process {
 
       await this.interaction.deferReply();
 
-      const sourceList = await FirestoreSource.findWithChannelId(channelId)
+      const sourceList = await FirestoreSource.getWithChannelId(channelId)
       const filterList = await FirestoreChannel.getFilters(channelId)
       const list = [ ...sourceList, ...filterList ]
 
