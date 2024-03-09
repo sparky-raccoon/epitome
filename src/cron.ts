@@ -81,7 +81,7 @@ const initCronJob = async (client: Client) => {
   const checkAndPost = async () => {
     const sourceFullList = await FirestoreSource.getAll();
     const rssSources = sourceFullList.filter((s) => s.type === "rss");
-    const publications: Publication[] = await parseRssFeeds(rssSources as FSource[]);
+    const publications: Publication[] = await parseRssFeeds(rssSources);
     publications.sort((a, b) => a.dateMs - b.dateMs);
 
     for (const pub of publications) {

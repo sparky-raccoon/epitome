@@ -10,6 +10,7 @@ import { Message } from "@/utils/constants";
 import {
   Publication,
   isPublication,
+  isSource,
 } from "@/utils/types";
 import {
   formatFullListToDescription,
@@ -133,7 +134,7 @@ const getMessage = (type: Message, data?: MessageData): any => {
       if (!data || !Array.isArray(data)) throw new Error("Invalid data type.");
       title += "Liste des sources suivies & tags configurés";
       if (data.length === 0) description = "Aucune configuration connue pour ce salon.";
-      else description = formatFullListToDescription(data as (FSource | string)[]);
+      else description = formatFullListToDescription(data);
       break;
     }
     case Message.ADD_CONFIRM: {
@@ -154,9 +155,9 @@ const getMessage = (type: Message, data?: MessageData): any => {
         title += ADD_TAG_TITLE;
         description =
           "Tu es sur le point d’ajouter les tags suivants : \n" +
-          formatTagListToString(toAdd as string[]) +
+          formatTagListToString(toAdd) +
           (existing.length > 0
-            ? "\nLes tags suivants ont déjà configurés : " + formatTagListToString(existing as string[])
+            ? "\nLes tags suivants ont déjà configurés : " + formatTagListToString(existing)
             : "");
         component = confirmOrCancelButton();
       }
@@ -199,14 +200,14 @@ const getMessage = (type: Message, data?: MessageData): any => {
     case Message.DELETE_CONFIRM: {
       if (!data || typeof data !== "object") throw new Error("Invalid data type.");
       if (!("delete" in data) || !("type" in data)) throw new Error("Invalid data type.");
-      if (data.type === 'source') {
+      if (data.type === 'source' && isSource(data.delete)) {
         title += DELETE_SOURCE_TITLE;
         description =
           "La source de publications suivante est sur le point d'être supprimée :\n" +
-          formatSourceToBlockQuote(data.delete as FSource);
-      } else if (data.type === 'filter') {
+          formatSourceToBlockQuote(data.delete);
+      } else if (data.type === 'filter' && typeof data.delete === "string") {
         title += DELETE_TAG_TITLE;
-        description = `Le tag suivant est sur le point d'être supprimé : ${bold(data.delete as string)}`;
+        description = `Le tag suivant est sur le point d'être supprimé : ${bold(data.delete)}`;
       }
       component = confirmOrCancelButton();
       break;

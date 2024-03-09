@@ -191,8 +191,8 @@ class Process {
 
       await this.interaction.deferReply();
 
-      const sourceList = await FirestoreSource.findWithChannelId(channelId) as FSource[];
-      const filterList = await FirestoreChannel.getFilters(channelId) as string[];
+      const sourceList = await FirestoreSource.findWithChannelId(channelId)
+      const filterList = await FirestoreChannel.getFilters(channelId)
       const list = [ ...sourceList, ...filterList ]
 
       const message = getMessage(Message.LIST, list);

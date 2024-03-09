@@ -16,7 +16,7 @@ const isFSource = (source: unknown): source is FSource => {
 
 export { FSource }
 export default class FirestoreSource {
-    static add = async (source: Source | FSource, channelId: string) => {
+    static add = async (source: Source | FSource, channelId: string): Promise<void> => {
         if (isFSource(source)) {
             const channels = [...source.channels, channelId];
             await setDoc(doc(db, "sources", source.id), { ...source, channels });
@@ -48,21 +48,21 @@ export default class FirestoreSource {
         return source;
     }
 
-    static delete = async (id?: string) => {
-        if (!id) throw new Error("No id provided for source deletion.");
-        await deleteDoc(doc(db, "sources", id));
-    }
-
-    static findWithChannelId = async (channelId: string) => {
+    static findWithChannelId = async (channelId: string): Promise<FSource[]> => {
         const q = query(collection(db, "sources"), where("channels", "array-contains", channelId));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return [];
 
-        const sources = querySnapshot.docs.map((doc) => doc.data());
+        const sources = querySnapshot.docs.map((doc) => doc.data()) as FSource[];
         return sources;
     }
 
-    static removeChannelFromList = async (channelId: string, sourceId?: string) => {
+    static delete = async (id?: string): Promise<void> => {
+        if (!id) throw new Error("No id provided for source deletion.");
+        await deleteDoc(doc(db, "sources", id));
+    }
+
+    static removeChannelFromList = async (channelId: string, sourceId?: string): Promise<void> => {
         const q = query(collection(db, "sources"), where("channels", "array-contains", channelId));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return;
@@ -84,16 +84,16 @@ export default class FirestoreSource {
         }
     }
 
-    static getAll = async () => {
+    static getAll = async (): Promise<FSource[]> => {
         const q = query(collection(db, "sources"));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return [];
 
-        const sources = querySnapshot.docs.map((doc) => doc.data());
+        const sources = querySnapshot.docs.map((doc) => doc.data()) as FSource[];
         return sources;
     }
 
-    static updateLastParsedAt = async (id: string) => {
+    static updateLastParsedAt = async (id: string): Promise<void> => {
         await setDoc(doc(db, "sources", id), {
             lastParsedAt: new Date().toISOString()
         }, { merge: true });
