@@ -84,176 +84,185 @@ const getMessage = (type: Message, data?: MessageData): any => {
   const imageUrl = "";
   let component: MessageComponent | undefined;
 
-  switch (type) {
-    case Message.HELP: {
-      title += "Ici Epitome";
-      description =
-        "Je suis un.e bot qui t’aidera à rester à jour vis à vis de certaines sources " +
-        "d’information à partir de leurs flux RSS - d'autres modes de suivi seront supportés à l'avenir. " +
-        "Chaque salon de ton serveur Discord dispose de sa propre configuration et peut se voir associer " +
-        "des sources différentes. Les publications relatives à ces sources peuvent être filtrées " +
-        "à partir d'une liste de tags choisis. \n\n" +
-        "Voici la liste des commandes auxquelles je réponds :\n" +
-        `▪︎ ${bold(
-          "/add-source <urls>"
-        )} - pour ajouter une ou plusieurs source au salon présent.\n` +
-        `▪︎ ${bold("/add-filter <names>")} ` +
-        `- pour ajouter un ou plusieurs tags / filtres au salon présent.\n` +
-        `▪︎ ${bold(
-          "/delete <nom>"
-        )} - pour supprimer une source ou un tag associé au salon présent via leurs identifiants.\n` +
-        `▪︎ ${bold("/cancel")} - pour annuler une procédure d’ajout ou de suppression en cours.\n` +
-        `▪︎ ${bold("/list")} ` +
-        `- pour lister l’ensemble des sources & tags associés à ce salon.\n` +
-        `▪︎ ${bold("/help")} - pour te rappeler qui je suis, et ce que je sais faire.`;
-      break;
-    }
-    case Message.POST: {
-      if (!isPublication(data)) throw new Error("Invalid data type.");
-      const {
-        type,
-        name,
-        title: pTitle,
-        link,
-        contentSnippet,
-        author,
-        date,
-        duplicateSources,
-      } = data;
-      title += `[${name}] ${pTitle}`;
-      description =
-        `${contentSnippet}\n\n` +
-        `Date de publication : ${date}\n` +
-        (author ? `Auteur.rice : ${author}\n` : "") +
-        `Source : ${link}` +
-        (duplicateSources ? `\nAussi visible sur : ${duplicateSources.join(", ")}` : "");
-      color = getColorForSourceType(type);
-      break;
-    }
-    case Message.LIST: {
-      if (!data || !Array.isArray(data)) throw new Error("Invalid data type.");
-      title += "Liste des sources suivies & tags configurés";
-      if (data.length === 0) description = "Aucune configuration connue pour ce salon.";
-      else description = formatFullListToDescription(data);
-      break;
-    }
-    case Message.ADD_CONFIRM: {
-      if (!data || typeof data !== "object") throw new Error("Invalid data type.");
-      if (!("type" in data) || !("new" in data) || !("existing" in data)) throw new Error("Invalid data type.");
-      const { type, new: toAdd, existing } = data;
-      if (type === 'source') {
+  try {
+    switch (type) {
+      case Message.HELP: {
+        title += "Ici Epitome";
+        description =
+          "Je suis un.e bot qui t’aidera à rester à jour vis à vis de certaines sources " +
+          "d’information à partir de leurs flux RSS - d'autres modes de suivi seront supportés à l'avenir. " +
+          "Chaque salon de ton serveur Discord dispose de sa propre configuration et peut se voir associer " +
+          "des sources différentes. Les publications relatives à ces sources peuvent être filtrées " +
+          "à partir d'une liste de tags choisis. \n\n" +
+          "Voici la liste des commandes auxquelles je réponds :\n" +
+          `▪︎ ${bold(
+            "/add-source <urls>"
+          )} - pour ajouter une ou plusieurs source au salon présent.\n` +
+          `▪︎ ${bold("/add-filter <names>")} ` +
+          `- pour ajouter un ou plusieurs tags / filtres au salon présent.\n` +
+          `▪︎ ${bold(
+            "/delete <nom>"
+          )} - pour supprimer une source ou un tag associé au salon présent via leurs identifiants.\n` +
+          `▪︎ ${bold("/cancel")} - pour annuler une procédure d’ajout ou de suppression en cours.\n` +
+          `▪︎ ${bold("/list")} ` +
+          `- pour lister l’ensemble des sources & tags associés à ce salon.\n` +
+          `▪︎ ${bold("/help")} - pour te rappeler qui je suis, et ce que je sais faire.`;
+        break;
+      }
+      case Message.POST: {
+        if (!isPublication(data)) throw new Error("Invalid data type.");
+        const {
+          type,
+          name,
+          title: pTitle,
+          link,
+          contentSnippet,
+          author,
+          date,
+          duplicateSources,
+        } = data;
+        title += `[${name}] ${pTitle}`;
+        description =
+          `${contentSnippet}\n\n` +
+          `Date de publication : ${date}\n` +
+          (author ? `Auteur.rice : ${author}\n` : "") +
+          `Source : ${link}` +
+          (duplicateSources ? `\nAussi visible sur : ${duplicateSources.join(", ")}` : "");
+        color = getColorForSourceType(type);
+        break;
+      }
+      case Message.LIST: {
+        if (!data || !Array.isArray(data)) throw new Error("Invalid data type.");
+        title += "Liste des sources suivies & tags configurés";
+        if (data.length === 0) description = "Aucune configuration connue pour ce salon.";
+        else description = formatFullListToDescription(data);
+        break;
+      }
+      case Message.ADD_CONFIRM: {
+        if (!data || typeof data !== "object") throw new Error("Invalid data type.");
+        if (!("type" in data) || !("new" in data) || !("existing" in data)) throw new Error("Invalid data type.");
+        const { type, new: toAdd, existing } = data;
+        if (type === 'source') {
+          title += ADD_SOURCE_TITLE;
+          description =
+            `Tu es sur le point d'ajouter les sources suivantes :\n\n` +
+            formatFullListToDescription(toAdd) +
+            (existing.length > 0
+              ? "\nLes sources suivantes ont déjà été configurées :\n\n" +
+                formatFullListToDescription(existing)
+              : "");
+          component = confirmOrCancelButton();
+        } else if (type === 'filter') {
+          title += ADD_TAG_TITLE;
+          description =
+            "Tu es sur le point d’ajouter les tags suivants : \n" +
+            formatTagListToString(toAdd) +
+            (existing.length > 0
+              ? "\nLes tags suivants ont déjà configurés : " + formatTagListToString(existing)
+              : "");
+          component = confirmOrCancelButton();
+        }
+        break;
+      }
+      case Message.ADD_SUCCESS_SOURCE: {
+        title += ADD_SOURCE_TITLE + " effectif";
+        description =
+          `Tu retrouveras celle-ci parmi la liste des sources ` +
+          `précédemment configurées pour ce salon avec la commande \`/list\``;
+        break;
+      }
+      case Message.ADD_SUCCESS_TAG: {
+        title += ADD_TAG_TITLE + " effectif";
+        description =
+          `Tu retrouveras celui-ci parmi la liste des tags ` +
+          `précédemment configurés pour ce salon avec la commande \`/list\``;
+        break;
+      }
+      case Message.ADD_ALREADY_EXISTS: {
+        if (!data || typeof data !== "object") throw new Error("Invalid data type.");
+        if (!("type" in data) || !("duplicates" in data)) throw new Error("Invalid data type.");
+        if (data.type === 'source') {
+          title += ADD_SOURCE_TITLE;
+          description =
+            "Il semblerait que ces sources soient déjà suivies :\n\n" +
+            formatSourceListToBlockQuotes(data.duplicates);
+        } else if (data.type === 'filter') {
+          title += ADD_TAG_TITLE;
+          description =
+            "Il semblerait que ces tags soient déjà configurés : " + formatTagListToString(data.duplicates);
+        }
+        break;
+      }
+      case Message.ADD_NO_VALID_URL: {
         title += ADD_SOURCE_TITLE;
-        description =
-          `Tu es sur le point d'ajouter les sources suivantes :\n\n` +
-          formatFullListToDescription(toAdd) +
-          (existing.length > 0
-            ? "\nLes sources suivantes ont déjà été configurées :\n\n" +
-              formatFullListToDescription(existing)
-            : "");
+        description = "Aucune URL valide n'a été fournie.";
+        break;
+      }
+      case Message.DELETE_CONFIRM: {
+        if (!data || typeof data !== "object") throw new Error("Invalid data type.");
+        if (!("delete" in data) || !("type" in data)) throw new Error("Invalid data type.");
+        if (data.type === 'source' && isSource(data.delete)) {
+          title += DELETE_SOURCE_TITLE;
+          description =
+            "La source de publications suivante est sur le point d'être supprimée :\n" +
+            formatSourceToBlockQuote(data.delete);
+        } else if (data.type === 'filter' && typeof data.delete === "string") {
+          title += DELETE_TAG_TITLE;
+          description = `Le tag suivant est sur le point d'être supprimé : ${bold(data.delete)}`;
+        }
         component = confirmOrCancelButton();
-      } else if (type === 'filter') {
-        title += ADD_TAG_TITLE;
-        description =
-          "Tu es sur le point d’ajouter les tags suivants : \n" +
-          formatTagListToString(toAdd) +
-          (existing.length > 0
-            ? "\nLes tags suivants ont déjà configurés : " + formatTagListToString(existing)
-            : "");
-        component = confirmOrCancelButton();
+        break;
       }
-      break;
-    }
-    case Message.ADD_SUCCESS_SOURCE: {
-      title += ADD_SOURCE_TITLE + " effectif";
-      description =
-        `Tu retrouveras celle-ci parmi la liste des sources ` +
-        `précédemment configurées pour ce salon avec la commande \`/list\``;
-      break;
-    }
-    case Message.ADD_SUCCESS_TAG: {
-      title += ADD_TAG_TITLE + " effectif";
-      description =
-        `Tu retrouveras celui-ci parmi la liste des tags ` +
-        `précédemment configurés pour ce salon avec la commande \`/list\``;
-      break;
-    }
-    case Message.ADD_ALREADY_EXISTS: {
-      if (!data || typeof data !== "object") throw new Error("Invalid data type.");
-      if (!("type" in data) || !("duplicates" in data)) throw new Error("Invalid data type.");
-      if (data.type === 'source') {
-        title += ADD_SOURCE_TITLE;
+      case Message.DELETE_SUCCESS_SOURCE: {
+        title += DELETE_SOURCE_TITLE + " effective";
         description =
-          "Il semblerait que ces sources soient déjà suivies :\n\n" +
-          formatSourceListToBlockQuotes(data.duplicates);
-      } else if (data.type === 'filter') {
-        title += ADD_TAG_TITLE;
-        description =
-          "Il semblerait que ces tags soient déjà configurés : " + formatTagListToString(data.duplicates);
+          `Tu ne seras plus notifié.e des dernières publications associées à celle-ci. ` +
+          `Pour retrouver la liste des sources de publication présentement configurées dans ce salon, appelle la commande \`/list\``;
+        break;
       }
-      break;
-    }
-    case Message.ADD_NO_VALID_URL: {
-      title += ADD_SOURCE_TITLE;
-      description = "Aucune URL valide n'a été fournie.";
-      break;
-    }
-    case Message.DELETE_CONFIRM: {
-      if (!data || typeof data !== "object") throw new Error("Invalid data type.");
-      if (!("delete" in data) || !("type" in data)) throw new Error("Invalid data type.");
-      if (data.type === 'source' && isSource(data.delete)) {
-        title += DELETE_SOURCE_TITLE;
+      case Message.DELETE_SUCCESS_TAG: {
+        title += DELETE_TAG_TITLE + " effective";
         description =
-          "La source de publications suivante est sur le point d'être supprimée :\n" +
-          formatSourceToBlockQuote(data.delete);
-      } else if (data.type === 'filter' && typeof data.delete === "string") {
-        title += DELETE_TAG_TITLE;
-        description = `Le tag suivant est sur le point d'être supprimé : ${bold(data.delete)}`;
+          `Les publications ne seront plus filtrées selon ce tag. ` +
+          `Pour retrouver la liste des tags présentement configurés dans ce salon, appelle la commande \`/list\``;
+        break;
       }
-      component = confirmOrCancelButton();
-      break;
+      case Message.CANCEL: {
+        title += "Procédure annulée";
+        description = "Ce message s'auto-détruira dans quelques instants.";
+        break;
+      }
+      case Message.ERROR: {
+        if (typeof data !== "string") throw new Error("Invalid data type.");
+        title += "Erreur";
+        description = "Quelque chose ne tourne pas rond.\n" + data;
+      }
     }
-    case Message.DELETE_SUCCESS_SOURCE: {
-      title += DELETE_SOURCE_TITLE + " effective";
-      description =
-        `Tu ne seras plus notifié.e des dernières publications associées à celle-ci. ` +
-        `Pour retrouver la liste des sources de publication présentement configurées dans ce salon, appelle la commande \`/list\``;
-      break;
-    }
-    case Message.DELETE_SUCCESS_TAG: {
-      title += DELETE_TAG_TITLE + " effective";
-      description =
-        `Les publications ne seront plus filtrées selon ce tag. ` +
-        `Pour retrouver la liste des tags présentement configurés dans ce salon, appelle la commande \`/list\``;
-      break;
-    }
-    case Message.CANCEL: {
-      title += "Procédure annulée";
-      description = "Ce message s'auto-détruira dans quelques instants.";
-      break;
-    }
-    case Message.ERROR: {
-      if (typeof data !== "string") throw new Error("Invalid data type.");
-      title += "Erreur";
-      description = "Quelque chose ne tourne pas rond.\n" + data;
-    }
-  }
 
-  const result = [];
-  if (description.length > 2000) {
-    splitDescriptionInMultipleMessages(description).forEach((description, i, descs) => {
-      const isFirstEntry = i === 0;
-      result.push(
-        buildDiscordMessage(isFirstEntry, {
-          title: title + ` (${i + 1} / ${descs.length})`,
-          description,
-          color,
-          imageUrl,
-          component,
-        })
-      );
+    const result = [];
+    if (description.length > 2000) {
+      splitDescriptionInMultipleMessages(description).forEach((description, i, descs) => {
+        const isFirstEntry = i === 0;
+        result.push(
+          buildDiscordMessage(isFirstEntry, {
+            title: title + ` (${i + 1} / ${descs.length})`,
+            description,
+            color,
+            imageUrl,
+            component,
+          })
+        );
+      });
+    } else result.push(buildDiscordMessage(true, { title, description, color, imageUrl, component }));
+    return result;
+  } catch (err) {
+    console.error(err);
+    return buildDiscordMessage(true, {
+      title: "Erreur",
+      description: "Quelque chose ne tourne pas rond.",
+      color,
     });
-  } else result.push(buildDiscordMessage(true, { title, description, color, imageUrl, component }));
-  return result;
+  }
 };
 
 export { getMessage };

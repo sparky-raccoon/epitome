@@ -36,13 +36,6 @@ const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
       if (!lastParsedAt || (new Date(lastParsedAt).getTime() < pubDateMs)) {
         lastParsedAtShouldBeUpdated = true;
 
-        const MAX_TITLE_LENGTH_IN_LOGS = 50;
-        const slicedTitle =
-          title.length >= MAX_TITLE_LENGTH_IN_LOGS
-            ? title.slice(0, MAX_TITLE_LENGTH_IN_LOGS) + "..."
-            : title;
-        logger.info(`New publication : ${slicedTitle} (${pubDate})`);
-
         const duplicateIndex = publications.findIndex((p) => p.title === title);
         if (duplicateIndex >= 0) {
           const duplicate = publications[duplicateIndex];
@@ -99,7 +92,9 @@ const initCronJob = async (client: Client) => {
           });
 
           if (noFiltersDefined || someFiltersMatch) {
-            testChannel.send(getMessage(Message.POST, pub));
+            logger.info(`Nouvelle publication sur ${testChannel.id}: ${pub.title}`)
+            const message = getMessage(Message.POST, pub);
+            await testChannel.send(message[0]);
           }
         }
       }

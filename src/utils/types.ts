@@ -43,7 +43,8 @@ const isPublication = (publication: unknown): publication is Publication => {
     "link" in publication &&
     "contentSnippet" in publication &&
     "date" in publication &&
-    "dateMs" in publication
+    "dateMs" in publication &&
+    "sourceId" in publication
   );
 };
 

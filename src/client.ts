@@ -4,7 +4,7 @@ import { getMessage } from "@/utils/messages";
 import { Process } from "@/utils/process";
 import logger from "@/utils/logger";
 import { reply } from "@/utils/replier";
-// import initCronJob from "@/cron";
+import initCronJob from "@/cron";
 import FirestoreSource from "@/bdd/collections/source";
 import FirestoreChannel from "@/bdd/collections/channel";
 
@@ -20,7 +20,7 @@ const initDiscordClient = (
   client.once(Events.ClientReady, async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
 
-    // initCronJob(client);
+    initCronJob(client);
 
     client.on(Events.GuildCreate, async (guild) => {
       logger.info(`Joined new guild: ${guild.name} (${guild.id})`);
