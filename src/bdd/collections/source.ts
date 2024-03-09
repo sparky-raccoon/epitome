@@ -2,6 +2,7 @@ import { collection, query, where, getDocs, setDoc, doc, deleteDoc } from "fireb
 import { v4 as uuidv4 } from 'uuid';
 import { firestore as db } from "@/bdd/firestore";
 import { Source, isSource } from "@/utils/types";
+import FirestoreChannel from "@/bdd/collections/channel";
 
 interface FSource extends Source {
     id: string;
@@ -38,12 +39,12 @@ export default class FirestoreSource {
         return source;
     }
 
-    static findWithName = async (name :string) => {
+    static findWithName = async (name :string): Promise<FSource | null> => {
         const q = query(collection(db, "sources"), where("name", "==", name));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return null;
 
-        const source = querySnapshot.docs[0].data();
+        const source = querySnapshot.docs[0].data() as FSource;
         return source;
     }
 
@@ -61,16 +62,26 @@ export default class FirestoreSource {
         return sources;
     }
 
-    static removeChannelFromList = async (channelId: string) => {
+    static removeChannelFromList = async (channelId: string, sourceId?: string) => {
         const q = query(collection(db, "sources"), where("channels", "array-contains", channelId));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return;
 
-        querySnapshot.forEach(async (s) => {
-            const source = s.data();
+        const removals: Promise<void>[] = [];
+        querySnapshot.forEach((s) => {
+            if (sourceId && s.id !== sourceId) return;
+
+            const source = s.data() as FSource;
             const channels = source.channels.filter((c: string) => c !== channelId);
-            await setDoc(doc(db, "sources", source.id), { ...source, channels });
+
+            if (channels.length === 0) removals.push(FirestoreSource.delete(source.id));
+            else removals.push(setDoc(doc(db, "sources", source.id), { ...source, channels }));
         });
+
+        await Promise.all(removals);
+        if (!sourceId || removals.length === querySnapshot.size) {
+            await FirestoreChannel.delete(channelId);
+        }
     }
 
     static getAll = async () => {

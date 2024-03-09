@@ -149,16 +149,17 @@ class Process {
       const name = options.getString("nom");
       if (!guildId || !channelId || !name) throw new Error(INTERNAL_ERROR);
 
-      let selectedSourceOrTag: unknown = await FirestoreSource.findWithName(name);
+      let selectedSourceOrTag: FSource | string | null = await FirestoreSource.findWithName(name);
       let type: 'source' | 'filter';
       if (!selectedSourceOrTag) {
         const existingTags = await FirestoreChannel.getFilters(channelId);
         if (existingTags.includes(name)) selectedSourceOrTag = name;
+
         if (!selectedSourceOrTag) throw new Error("Ce filtre ou cette source n'existe pas, ou plus.");
         else type = "filter";
       } else type = "source";
 
-      let message = getMessage(Message.DELETE_CONFIRM, { delete: selectedSourceOrTag as (FSource | string), type });
+      let message = getMessage(Message.DELETE_CONFIRM, { delete: selectedSourceOrTag, type });
       const response = await editReply(this.interaction, message);
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
@@ -167,7 +168,7 @@ class Process {
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
         if (type === "source") {
-          await FirestoreSource.delete((selectedSourceOrTag as FSource).id);
+          await FirestoreSource.removeChannelFromList(channelId, (selectedSourceOrTag as FSource).id);
           message = getMessage(Message.DELETE_SUCCESS_SOURCE);
         } else if (type === "filter") {
           await FirestoreChannel.deleteFilter(channelId, selectedSourceOrTag as string);

@@ -26,7 +26,7 @@ export default class Channel {
         return channel;
     }
 
-    static getFilters = async (id: string) => {
+    static getFilters = async (id: string): Promise<string[]> => {
         const channel = await Channel.findWithId(id);
         if (!channel) return [];
 

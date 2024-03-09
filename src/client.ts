@@ -32,7 +32,6 @@ const initDiscordClient = (
 
     client.on(Events.ChannelDelete, async (channel) => {
       logger.info(`Left channel: ${channel.id}`);
-      await FirestoreChannel.delete(channel.id);
       await FirestoreSource.removeChannelFromList(channel.id);
     });
 
