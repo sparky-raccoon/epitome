@@ -172,10 +172,10 @@ class Process {
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
         if (type === "source") {
           await FirestoreSource.delete((selectedSourceOrTag as FSource).id);
-          message = getMessage(Message.DELETE_SUCCESS_SOURCE, selectedSourceOrTag as FSource);
+          message = getMessage(Message.DELETE_SUCCESS_SOURCE);
         } else if (type === "filter") {
           await FirestoreChannel.deleteFilter(channelId, selectedSourceOrTag as string);
-          message = getMessage(Message.DELETE_SUCCESS_TAG, selectedSourceOrTag as string);
+          message = getMessage(Message.DELETE_SUCCESS_TAG);
         }
         await confirmInteraction.update(message[0]);
       } else this.cancel(this.interaction);

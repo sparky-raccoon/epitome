@@ -7,8 +7,6 @@ import {
   StringSelectMenuBuilder,
 } from "discord.js";
 import { Message } from "@/utils/constants";
-import { Source, SourceCreation } from "@/bdd/models/source";
-import { Tag, TagCreation } from "@/bdd/models/tag";
 import {
   Publication,
   isPublication,
@@ -38,13 +36,6 @@ const getColorForSourceType = (sourceType: string): ColorResolvable => {
 
 type Error = string;
 type MessageData =
-  | Source
-  | SourceCreation
-  | Source[]
-  | Tag
-  | TagCreation
-  | TagCreation[]
-  | Tag[]
   | Publication
   | (FSource | string)[]
   | { delete: FSource | string; type: 'source' | 'filter' }

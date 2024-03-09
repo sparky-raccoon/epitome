@@ -1,8 +1,7 @@
 import { blockQuote } from "discord.js";
-import { Source, SourceCreation } from "@/bdd/models/source";
 import { FSource, isFSource } from "@/bdd/collections/source";
 
-const formatSourceToBlockQuote = (source: Source | SourceCreation): `>>> ${string}` => {
+const formatSourceToBlockQuote = (source: FSource): `>>> ${string}` => {
   const { type, name, url } = source;
 
   return blockQuote(
@@ -10,7 +9,7 @@ const formatSourceToBlockQuote = (source: Source | SourceCreation): `>>> ${strin
   );
 };
 
-const formatSourceListToBlockQuotes = (list: (Source | SourceCreation)[]): string => {
+const formatSourceListToBlockQuotes = (list: FSource[]): string => {
   let description = "";
   list.forEach((source) => {
     const { type, name, url } = source;
