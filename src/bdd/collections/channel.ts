@@ -1,4 +1,4 @@
-import { setDoc, getDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, where, setDoc, getDoc, getDocs, deleteDoc, doc, query } from "firebase/firestore";
 import { firestore as db } from "@/bdd/firestore";
 
 interface FChannel {
@@ -23,6 +23,15 @@ export default class FirestoreChannel {
 
         const channel = channelSnap.data() as FChannel;
         return channel;
+    }
+
+    static getWithGuildId = async (guildId: string): Promise<FChannel[]> => {
+        const q = query(collection(db, "channels"), where("guildId", "==", guildId));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) return [];
+
+        const channels = querySnapshot.docs.map((doc) => doc.data()) as FChannel[];
+        return channels;
     }
 
     static delete = async (id: string, failSilently = false): Promise<void> => {

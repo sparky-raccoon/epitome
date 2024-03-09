@@ -28,6 +28,10 @@ const initDiscordClient = (
 
     client.on(Events.GuildDelete, async (guild) => {
       logger.info(`Left guild: $${guild.id}`);
+      const channels = await FirestoreChannel.getWithGuildId(guild.id);
+      for (const channel of channels) {
+        await FirestoreSource.removeChannelFromList(channel.id);
+      }
     });
 
     client.on(Events.ChannelDelete, async (channel) => {
