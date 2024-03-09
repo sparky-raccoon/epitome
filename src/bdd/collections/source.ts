@@ -1,45 +1,40 @@
 import { collection, query, where, getDocs, setDoc, doc, deleteDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from 'uuid';
 import { firestore as db } from "@/bdd/firestore";
+import { Source, isSource } from "@/utils/types";
 
-interface FSource {
-    id?: string;
-    type?: string;
-    name: string;
-    url: string;
+interface FSource extends Source {
+    id: string;
     channels: string[];
     lastParsedAt?: string;
 }
 
 const isFSource = (source: unknown): source is FSource => {
-    if (!source || typeof source !== "object") {
-        return false;
-    }
-
-    return source && "name" in source && "url" in source && "channels" in source;
+    return isSource(source) && "id" in source && "channels" in source;
 }
 
-export { FSource, isFSource }
-
-export default class Source {
-    static add = async (source: FSource, channelId: string) => {
-        const existingSource = await this.findWithUrl(source.url);
-        if (existingSource) {
-            const channels = [...existingSource.channels, channelId];
-            await setDoc(doc(db, "sources", existingSource.id), { ...existingSource, channels });
+export { FSource }
+export default class FirestoreSource {
+    static add = async (source: Source | FSource, channelId: string) => {
+        if (isFSource(source)) {
+            const channels = [...source.channels, channelId];
+            await setDoc(doc(db, "sources", source.id), { ...source, channels });
         } else {
-            source.id = uuidv4();
-            source.type = "rss";
-            await setDoc(doc(db, "sources", source.id), source);
+            const id = uuidv4();
+            await setDoc(doc(db, "sources", id), {
+                ...source,
+                id,
+                channels: [channelId]
+            });
         }
     }
 
-    static findWithUrl = async (url :string) => {
+    static findWithUrl = async (url :string): Promise<FSource | null> => {
         const q = query(collection(db, "sources"), where("url", "==", url));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return null;
 
-        const source = querySnapshot.docs[0].data();
+        const source = querySnapshot.docs[0].data() as FSource;
         return source;
     }
 

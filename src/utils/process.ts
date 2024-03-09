@@ -6,6 +6,7 @@ import logger from "@/utils/logger";
 import { reply, editReply } from "@/utils/replier";
 import FirestoreSource, { FSource } from "@/bdd/collections/source";
 import FirestoreChannel from "@/bdd/collections/channel";
+import { Source } from "@/utils/types";
 
 const TIMEOUT = 60000;
 
@@ -45,27 +46,22 @@ class Process {
       if (!guildId || !channelId || !sources || sources.length === 0)
         throw new Error(INTERNAL_ERROR);
 
-      const duplicates = []
-      const nonDuplicates = []
+      const duplicates: FSource[] = []
+      const nonDuplicates: (FSource | Source)[] = []
       for (const s of sources) {
         const { url } = s
         const existing = await FirestoreSource.findWithUrl(url);
         if (existing) {
           if (existing.channels.includes(channelId)) duplicates.push(existing);
-          else {
-            nonDuplicates.push({
-            ...existing,
-            channels: [...existing.channels, channelId]
-           });
-          }
+          else nonDuplicates.push(existing);
         } else {
           const name = await getRssNameFromUrl(url);
-          if (name) nonDuplicates.push({ url, name, channels: [channelId] });
+          if (name) nonDuplicates.push({ type: 'rss', name, url });
         }
       }
 
       if (duplicates.length === sources.length) {
-        const message = getMessage(Message.ADD_ALREADY_EXISTS, duplicates as FSource[]);
+        const message = getMessage(Message.ADD_ALREADY_EXISTS, { type: 'source', duplicates });
         await editReply(this.interaction, message);
         this.terminate(this.interaction.user.id);
         return;
@@ -76,7 +72,7 @@ class Process {
         return;
       }
 
-      let message = getMessage(Message.ADD_CONFIRM, { type: 'source', new: nonDuplicates as FSource[], existing: duplicates as FSource[] });
+      let message = getMessage(Message.ADD_CONFIRM, { type: 'source', new: nonDuplicates, existing: duplicates });
       const response = await editReply(this.interaction, message);
       const confirmInteraction = await response.awaitMessageComponent({
         time: TIMEOUT,
@@ -85,7 +81,7 @@ class Process {
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
         await FirestoreChannel.add({ id: channelId, guildId, filters: [] });
-        for (const source of nonDuplicates) await FirestoreSource.add(source as FSource, channelId);
+        for (const source of nonDuplicates) await FirestoreSource.add(source, channelId);
         message = getMessage(Message.ADD_SUCCESS_SOURCE);
         await confirmInteraction.update(message[0]);
       } else this.cancel(this.interaction);

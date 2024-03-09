@@ -1,7 +1,7 @@
 import { blockQuote } from "discord.js";
-import { FSource, isFSource } from "@/bdd/collections/source";
+import { Source, isSource } from "@/utils/types";
 
-const formatSourceToBlockQuote = (source: FSource): `>>> ${string}` => {
+const formatSourceToBlockQuote = (source: Source): `>>> ${string}` => {
   const { type, name, url } = source;
 
   return blockQuote(
@@ -9,7 +9,7 @@ const formatSourceToBlockQuote = (source: FSource): `>>> ${string}` => {
   );
 };
 
-const formatSourceListToBlockQuotes = (list: FSource[]): string => {
+const formatSourceListToBlockQuotes = (list: Source[]): string => {
   let description = "";
   list.forEach((source) => {
     const { type, name, url } = source;
@@ -20,12 +20,12 @@ const formatSourceListToBlockQuotes = (list: FSource[]): string => {
   return blockQuote(description);
 };
 
-const formatFullListToDescription = (list: (FSource | string)[]): string => {
+const formatFullListToDescription = (list: (Source | string)[]): string => {
   let description = "";
   type ByTypeSourceList = { [type: string]: { name: string; url: string }[] };
 
   const byTypeSourceList = list.reduce((acc: ByTypeSourceList, sourceOrTag) => {
-    if (isFSource(sourceOrTag)) {
+    if (isSource(sourceOrTag)) {
       const { type, name, url } = sourceOrTag;
       const formattedType = `Flux ${type?.toUpperCase() || "RSS"}`;
       if (!acc[formattedType]) acc[formattedType] = [];

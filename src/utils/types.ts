@@ -1,3 +1,9 @@
+interface Source {
+  type: string;
+  name: string;
+  url: string;
+}
+
 interface Publication {
   type: string;
   name: string;
@@ -9,6 +15,19 @@ interface Publication {
   author?: string;
   sourceId: string;
   duplicateSources?: string[];
+}
+
+const isSource = (source: unknown): source is Source => {
+  if (!source || typeof source !== "object") {
+    return false;
+  }
+
+  return (
+    source &&
+    "type" in source &&
+    "name" in source &&
+    "url" in source
+  );
 }
 
 const isPublication = (publication: unknown): publication is Publication => {
@@ -29,6 +48,8 @@ const isPublication = (publication: unknown): publication is Publication => {
 };
 
 export {
+  Source,
+  isSource,
   Publication,
   isPublication,
 };

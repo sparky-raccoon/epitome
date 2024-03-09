@@ -20,6 +20,7 @@ import {
 } from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
 import { FSource } from "@/bdd/collections/source";
+import { Source } from "@/utils/types";
 
 const getColorForSourceType = (sourceType: string): ColorResolvable => {
   switch (sourceType) {
@@ -40,7 +41,7 @@ type MessageData =
   | (FSource | string)[]
   | { delete: FSource | string; type: 'source' | 'filter' }
   | { new: string[]; existing: string[]; type: 'filter' }
-  | { new: FSource[]; existing: FSource[]; type: 'source' }
+  | { new: (Source | FSource)[]; existing: FSource[]; type: 'source' }
   | { duplicates: FSource[]; type: 'source' }
   | { duplicates: string[]; type: 'filter' }
   | Error;
@@ -137,9 +138,9 @@ const getMessage = (type: Message, data?: MessageData): any => {
     }
     case Message.ADD_CONFIRM: {
       if (!data || typeof data !== "object") throw new Error("Invalid data type.");
-      if (!("new" in data) || !("existing" in data)) throw new Error("Invalid data type.");
-      const { new: toAdd, existing } = data;
-      if (data.type === 'source') {
+      if (!("type" in data) || !("new" in data) || !("existing" in data)) throw new Error("Invalid data type.");
+      const { type, new: toAdd, existing } = data;
+      if (type === 'source') {
         title += ADD_SOURCE_TITLE;
         description =
           `Tu es sur le point d'ajouter les sources suivantes :\n\n` +
@@ -149,7 +150,7 @@ const getMessage = (type: Message, data?: MessageData): any => {
               formatFullListToDescription(existing)
             : "");
         component = confirmOrCancelButton();
-      } else if (data.type === 'filter') {
+      } else if (type === 'filter') {
         title += ADD_TAG_TITLE;
         description =
           "Tu es sur le point d’ajouter les tags suivants : \n" +
@@ -177,7 +178,7 @@ const getMessage = (type: Message, data?: MessageData): any => {
     }
     case Message.ADD_ALREADY_EXISTS: {
       if (!data || typeof data !== "object") throw new Error("Invalid data type.");
-      if (!("duplicates" in data)) throw new Error("Invalid data type.");
+      if (!("type" in data) || !("duplicates" in data)) throw new Error("Invalid data type.");
       if (data.type === 'source') {
         title += ADD_SOURCE_TITLE;
         description =
