@@ -10,6 +10,7 @@ interface Publication {
   date: string;
   dateMs: number;
   author?: string;
+  sourceId: string;
   duplicateSources?: string[];
 }
 

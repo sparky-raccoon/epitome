@@ -8,6 +8,7 @@ interface FSource {
     name: string;
     url: string;
     channels: string[];
+    lastParsedAt?: string;
 }
 
 const isFSource = (source: unknown): source is FSource => {
@@ -75,5 +76,20 @@ export default class Source {
             const channels = source.channels.filter((c: string) => c !== channelId);
             await setDoc(doc(db, "sources", source.id), { ...source, channels });
         });
+    }
+
+    static getAll = async () => {
+        const q = query(collection(db, "sources"));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) return [];
+
+        const sources = querySnapshot.docs.map((doc) => doc.data());
+        return sources;
+    }
+
+    static updateLastParsedAt = async (id: string) => {
+        await setDoc(doc(db, "sources", id), {
+            lastParsedAt: new Date().toISOString()
+        }, { merge: true });
     }
 }
