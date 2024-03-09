@@ -3,6 +3,7 @@ import { firestore as db } from "@/bdd/firestore";
 
 interface FChannel {
     id: string;
+    guildId: string;
     filters: string[];
 }
 

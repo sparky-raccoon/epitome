@@ -84,7 +84,7 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        await FirestoreChannel.add({ id: channelId, filters: [] });
+        await FirestoreChannel.add({ id: channelId, guildId, filters: [] });
         for (const source of nonDuplicates) await FirestoreSource.add(source as FSource, channelId);
         message = getMessage(Message.ADD_SUCCESS_SOURCE);
         await confirmInteraction.update(message[0]);
@@ -171,7 +171,6 @@ class Process {
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
         if (type === "source") {
-          console.log(selectedSourceOrTag)
           await FirestoreSource.delete((selectedSourceOrTag as FSource).id);
           message = getMessage(Message.DELETE_SUCCESS_SOURCE, selectedSourceOrTag as FSource);
         } else if (type === "filter") {
@@ -198,7 +197,6 @@ class Process {
       const sourceList = await FirestoreSource.findWithChannelId(channelId) as FSource[];
       const filterList = await FirestoreChannel.getFilters(channelId) as string[];
       const list = [ ...sourceList, ...filterList ]
-      console.log(list)
 
       const message = getMessage(Message.LIST, list);
       await editReply(this.interaction, message);
