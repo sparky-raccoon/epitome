@@ -5,113 +5,99 @@ import logger from "@/utils/logger";
 import { Publication } from "@/utils/types";
 import { Message } from "@/utils/constants";
 import { getMessage } from "@/utils/messages";
-import {
-  listChannelIds,
-  listChannelSources,
-  listChannelTags,
-  updateSourceTimestamp,
-} from "@/bdd/operator";
+import FirestoreSource, { FSource } from "@/bdd/collections/source";
+import FirestoreChannel from "@/bdd/collections/channel";
 
-const parseRssFeeds = async (channelId: string): Promise<Publication[]> => {
+const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
   logger.info("Parsing RSS feeds");
-  const sourceList = await listChannelSources(channelId);
-  const tagList = await listChannelTags(channelId);
-  const rssSources = sourceList.filter((s) => s.type === "RSS");
   const publications: Publication[] = [];
+  const parser = new Parser();
 
-  if (rssSources.length > 0) {
-    const parser = new Parser();
+  for (const source of sourceList) {
+    const { id: sourceId, name, url, lastParsedAt } = source;
+    if (!sourceId) continue;
 
-    for (const source of rssSources) {
-      const { id, type, name, url, timestamp } = source;
-      const feed = await parser.parseURL(url);
+    const feed = await parser.parseURL(url);
+    const items = feed.items;
+    let lastParsedAtShouldBeUpdated = false;
 
-      const items = feed.items;
-      const lastParsedMs = parseInt(timestamp);
-      let newTimestamp = lastParsedMs.toString();
-      logger.info(`Last parsed timestamp for "${name}": ${lastParsedMs}`);
+    items.sort((a, b) => {
+      const aMs = a.pubDate ? new Date(a.pubDate).getTime() : 0;
+      const bMs = b.pubDate ? new Date(b.pubDate).getTime() : 0;
+      return aMs - bMs;
+    });
 
-      items.sort((a, b) => {
-        const aMs = a.pubDate ? new Date(a.pubDate).getTime() : 0;
-        const bMs = b.pubDate ? new Date(b.pubDate).getTime() : 0;
-        return aMs - bMs;
-      });
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const { pubDate, title, link, contentSnippet, creator: author } = item;
+      if (!pubDate || !title || !link || !contentSnippet) continue;
 
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const { pubDate, title, link, contentSnippet, creator: author } = item;
-        if (!pubDate || !title || !link || !contentSnippet) continue;
+      const pubDateMs = new Date(pubDate).getTime();
+      if (!lastParsedAt || (new Date(lastParsedAt).getTime() < pubDateMs)) {
+        lastParsedAtShouldBeUpdated = true;
 
-        const pubDateMs = new Date(pubDate).getTime();
-        if (lastParsedMs < pubDateMs) {
-          newTimestamp = pubDateMs.toString();
-
-          const MAX_TITLE_LENGTH_IN_LOGS = 50;
-          const slicedTitle =
-            title.length >= MAX_TITLE_LENGTH_IN_LOGS
-              ? title.slice(0, MAX_TITLE_LENGTH_IN_LOGS) + "..."
-              : title;
-          logger.info(`New publication : ${slicedTitle} (${pubDateMs})`);
-
-          const duplicateIndex = publications.findIndex((p) => p.title === title);
-          if (duplicateIndex >= 0) {
-            const duplicate = publications[duplicateIndex];
-            publications[duplicateIndex] = {
-              ...duplicate,
-              duplicateSources: [...(duplicate.duplicateSources || []), name],
-            };
-          } else if (
-            tagList.length === 0 ||
-            tagList
-              .map((t) => t.name.toLowerCase())
-              .some((keyword) => {
-                const sentenceHasKeyWord = (s: string) =>
-                  s.toLowerCase().split(" ").includes(keyword);
-                const titleHasKeyword = sentenceHasKeyWord(title);
-                const contentHasKeyword = sentenceHasKeyWord(contentSnippet);
-
-                return titleHasKeyword || contentHasKeyword;
-              })
-          ) {
-            publications.push({
-              type,
-              name,
-              title,
-              link,
-              contentSnippet,
-              date: new Date(pubDateMs).toLocaleString("fr-FR"),
-              dateMs: pubDateMs,
-              author,
-            });
-          }
+        const duplicateIndex = publications.findIndex((p) => p.title === title);
+        if (duplicateIndex >= 0) {
+          const duplicate = publications[duplicateIndex];
+          publications[duplicateIndex] = {
+            ...duplicate,
+            duplicateSources: [...(duplicate.duplicateSources || []), name],
+          };
+        } else {
+          publications.push({
+            type: "rss",
+            name,
+            title,
+            link,
+            contentSnippet,
+            date: new Date(pubDate).toLocaleString("fr-FR"),
+            dateMs: pubDateMs,
+            sourceId,
+            author,
+          });
         }
       }
+    }
 
-      if (newTimestamp !== lastParsedMs.toString()) {
-        logger.info(`Updating source ${id} with timestamp ${newTimestamp}`);
-        await updateSourceTimestamp(id, newTimestamp);
-      }
+    if (lastParsedAtShouldBeUpdated) {
+      logger.info(`Updating source ${sourceId} lastParsedAt`);
+      await FirestoreSource.updateLastParsedAt(sourceId);
     }
   }
 
   return publications;
-};
+}
 
 const initCronJob = async (client: Client) => {
   logger.info("Initializing cron job");
 
   const checkAndPost = async () => {
-    const channelIds = await listChannelIds();
-    for (const id of channelIds) {
-      logger.info(`Checking channel ${id}`);
-      const testChannel = client.channels.cache.get(id);
-      if (!testChannel || testChannel.type !== ChannelType.GuildText) continue;
+    const sourceFullList = await FirestoreSource.getAll();
+    const rssSources = sourceFullList.filter((s) => s.type === "rss");
+    const publications: Publication[] = await parseRssFeeds(rssSources);
+    publications.sort((a, b) => a.dateMs - b.dateMs);
 
-      const publications = await parseRssFeeds(id);
-      publications.sort((a, b) => a.dateMs - b.dateMs);
-      publications.forEach((publication) => {
-        testChannel.send(getMessage(Message.POST, publication));
-      });
+    for (const pub of publications) {
+      const { sourceId } = pub;
+      const source = rssSources.find((s) => s.id === sourceId);
+
+      for (const channelId of (source?.channels || [])) {
+        const testChannel = client.channels.cache.get(channelId);
+        if (testChannel && testChannel.type === ChannelType.GuildText) {
+          const filters = await FirestoreChannel.getFilters(channelId);
+          const noFiltersDefined = filters.length === 0;
+          const someFiltersMatch = filters.some((f) => {
+            const regex = new RegExp(f, "i");
+            return regex.test(pub.title) || regex.test(pub.contentSnippet);
+          });
+
+          if (noFiltersDefined || someFiltersMatch) {
+            logger.info(`Nouvelle publication sur ${testChannel.id}: ${pub.title}`)
+            const message = getMessage(Message.POST, pub);
+            await testChannel.send(message[0]);
+          }
+        }
+      }
     }
   };
 

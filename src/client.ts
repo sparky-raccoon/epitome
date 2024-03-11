@@ -5,29 +5,21 @@ import { Process } from "@/utils/process";
 import logger from "@/utils/logger";
 import { reply } from "@/utils/replier";
 import initCronJob from "@/cron";
-import {
-  initDatabase,
-  cleanDatabaseOnGuildLeave,
-  cleanDatabaseOnChannelLeave,
-  listEverything,
-} from "@/bdd/operator";
-import { Sequelize } from "sequelize";
+import FirestoreSource from "@/bdd/collections/source";
+import FirestoreChannel from "@/bdd/collections/channel";
 
 const initDiscordClient = (
   clientId?: string,
   token?: string
 ): {
   client: Client;
-  sequelize: Sequelize | null;
 } => {
   if (!token || !clientId) throw new Error("Missing environment variables");
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-  let sequelize = null;
 
   client.once(Events.ClientReady, async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
 
-    sequelize = await initDatabase();
     initCronJob(client);
 
     client.on(Events.GuildCreate, async (guild) => {
@@ -36,12 +28,15 @@ const initDiscordClient = (
 
     client.on(Events.GuildDelete, async (guild) => {
       logger.info(`Left guild: $${guild.id}`);
-      await cleanDatabaseOnGuildLeave(guild.id);
+      const channels = await FirestoreChannel.getWithGuildId(guild.id);
+      for (const channel of channels) {
+        await FirestoreSource.removeChannelFromList(channel.id);
+      }
     });
 
     client.on(Events.ChannelDelete, async (channel) => {
       logger.info(`Left channel: ${channel.id}`);
-      await cleanDatabaseOnChannelLeave(channel.id);
+      await FirestoreSource.removeChannelFromList(channel.id);
     });
 
     const flows: { [userId: string]: Process } = {};
@@ -80,12 +75,13 @@ const initDiscordClient = (
         const query = options.getString("nom")?.toLocaleLowerCase();
 
         if (query && query.length > 0) {
-          const sourceOrTagList = await listEverything(channelId);
-          const suggestions = sourceOrTagList.filter(({ name }) => {
-            const sourceOrTagName = name.toLocaleLowerCase();
-            return sourceOrTagName.includes(query);
+          const sourceList = await FirestoreSource.getWithChannelId(channelId);
+          const filterList = await FirestoreChannel.getFilters(channelId);
+          const sourceOrTagList = [ ...sourceList.map((s) => s.name), ...filterList ]
+          const suggestions = sourceOrTagList.filter(name => {
+            return name.toLocaleLowerCase().includes(query);
           });
-          const choices = suggestions.map(({ name }) => ({ name, value: name })).slice(0, 25);
+          const choices = suggestions.map((name) => ({ name, value: name })).slice(0, 25);
           await interaction.respond(choices);
         }
       }
@@ -94,7 +90,7 @@ const initDiscordClient = (
 
   client.login(token);
 
-  return { client, sequelize };
+  return { client };
 };
 
 export default initDiscordClient;

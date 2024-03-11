@@ -1,9 +1,7 @@
 import { blockQuote } from "discord.js";
-import { Source, SourceCreation } from "@/bdd/models/source";
-import { Tag, TagCreation } from "@/bdd/models/tag";
-import { isSource, isSourceCreation, isTag } from "./types";
+import { Source, isSource } from "@/utils/types";
 
-const formatSourceToBlockQuote = (source: Source | SourceCreation): `>>> ${string}` => {
+const formatSourceToBlockQuote = (source: Source): `>>> ${string}` => {
   const { type, name, url } = source;
 
   return blockQuote(
@@ -11,7 +9,7 @@ const formatSourceToBlockQuote = (source: Source | SourceCreation): `>>> ${strin
   );
 };
 
-const formatSourceListToBlockQuotes = (list: (Source | SourceCreation)[]): string => {
+const formatSourceListToBlockQuotes = (list: Source[]): string => {
   let description = "";
   list.forEach((source) => {
     const { type, name, url } = source;
@@ -22,19 +20,19 @@ const formatSourceListToBlockQuotes = (list: (Source | SourceCreation)[]): strin
   return blockQuote(description);
 };
 
-const formatFullListToDescription = (list: (Source | SourceCreation | Tag)[]): string => {
+const formatFullListToDescription = (list: (Source | string)[]): string => {
   let description = "";
   type ByTypeSourceList = { [type: string]: { name: string; url: string }[] };
 
   const byTypeSourceList = list.reduce((acc: ByTypeSourceList, sourceOrTag) => {
-    if (isSource(sourceOrTag) || isSourceCreation(sourceOrTag)) {
+    if (isSource(sourceOrTag)) {
       const { type, name, url } = sourceOrTag;
       const formattedType = `Flux ${type?.toUpperCase() || "RSS"}`;
       if (!acc[formattedType]) acc[formattedType] = [];
       acc[formattedType].push({ name, url });
-    } else if (isTag(sourceOrTag)) {
+    } else if (typeof sourceOrTag === "string") {
       if (!acc["Filtres"]) acc["Filtres"] = [];
-      acc["Filtres"].push({ name: sourceOrTag.name, url: "" });
+      acc["Filtres"].push({ name: sourceOrTag, url: "" });
     }
 
     return acc;
@@ -53,12 +51,11 @@ const formatFullListToDescription = (list: (Source | SourceCreation | Tag)[]): s
   return description;
 };
 
-const formatTagListToString = (list: (Tag | TagCreation)[]): string => {
+const formatTagListToString = (list: string[]): string => {
   let description = "";
   list.forEach((tag, i) => {
-    const { name } = tag;
     const isLast = i === list.length - 1;
-    description += `**${name}**${isLast ? "" : ", "}`;
+    description += `**${tag}**${isLast ? "" : ", "}`;
   });
 
   return description;

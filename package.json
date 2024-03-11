@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "export NODE_ENV=development && tsx src/test.ts",
     "dev": "export NODE_ENV=development && tsx watch src/index.ts",
     "build": "rm -rf dist && tsc -p tsconfig.prod.json && tsc-alias",
     "deploy-commands": "tsx src/deploy-commands.ts",
@@ -25,9 +24,9 @@
     "axios": "^0.27.2",
     "discord.js": "^14.14.0",
     "dotenv": "^16.0.0",
+    "firebase": "^10.8.0",
     "node-cron": "^3.0.3",
     "rss-parser": "^3.12.0",
-    "sequelize": "^6.35.1",
     "sqlite3": "^5.1.6",
     "uuid": "^9.0.1",
     "winston": "^3.11.0"
