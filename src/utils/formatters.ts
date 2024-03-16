@@ -24,6 +24,13 @@ const formatFullListToDescription = (list: (Source | string)[]): string => {
   let description = "";
   type ByTypeSourceList = { [type: string]: { name: string; url: string }[] };
 
+  list.sort((a, b) => {
+    if (isSource(a) && isSource(b)) return a.name.localeCompare(b.name);
+    if (isSource(a)) return -1;
+    if (isSource(b)) return 1;
+    return a.localeCompare(b);
+  });
+
   const byTypeSourceList = list.reduce((acc: ByTypeSourceList, sourceOrTag) => {
     if (isSource(sourceOrTag)) {
       const { type, name, url } = sourceOrTag;
