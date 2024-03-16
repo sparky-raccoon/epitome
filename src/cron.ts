@@ -87,7 +87,7 @@ const initCronJob = async (client: Client) => {
           const filters = await FirestoreChannel.getFilters(channelId);
           const noFiltersDefined = filters.length === 0;
           const someFiltersMatch = filters.some((f) => {
-            const regex = new RegExp(f, "i");
+            const regex = new RegExp(`[\\s,;.\\-_'"]${f}[\\s,;.\\-_'"]`, "i");
             return regex.test(pub.title) || regex.test(pub.contentSnippet);
           });
 
