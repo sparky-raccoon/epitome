@@ -1,5 +1,5 @@
 import { blockQuote } from "discord.js";
-import { Source, isSource } from "@/utils/types";
+import { Publication, Source, isSource } from "@/utils/types";
 
 const formatSourceToBlockQuote = (source: Source): `>>> ${string}` => {
   const { type, name, url } = source;
@@ -68,6 +68,16 @@ const formatTagListToString = (list: string[]): string => {
   return description;
 };
 
+const getPublicationDescription = (publication: Publication): string => {
+  const { contentSnippet, date, author, link, duplicateSources, filters } = publication;
+  return `${contentSnippet}\n\n` +
+    `Date de publication : ${date}\n` +
+    (author ? `Auteur.rice : ${author}\n` : "") +
+    `Source : ${link}` +
+    (duplicateSources ? `\nAussi visible sur : ${duplicateSources.join(", ")}` : "") +
+    (filters ? `\nFiltres concernés : ${filters.join(", ")}` : "");
+};
+
 const splitDescriptionInMultipleMessages = (description: string): string[] => {
   const messages: string[] = [];
   const descriptionLines = description.split("\n");
@@ -90,5 +100,6 @@ export {
   formatSourceListToBlockQuotes,
   formatFullListToDescription,
   formatTagListToString,
+  getPublicationDescription,
   splitDescriptionInMultipleMessages,
 };

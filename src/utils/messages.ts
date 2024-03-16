@@ -17,6 +17,7 @@ import {
   formatSourceListToBlockQuotes,
   formatSourceToBlockQuote,
   formatTagListToString,
+  getPublicationDescription,
   splitDescriptionInMultipleMessages,
 } from "@/utils/formatters";
 import { confirmOrCancelButton } from "@/components/confirm-button";
@@ -115,19 +116,9 @@ const getMessage = (type: Message, data?: MessageData): any => {
           type,
           name,
           title: pTitle,
-          link,
-          contentSnippet,
-          author,
-          date,
-          duplicateSources,
         } = data;
         title += `[${name}] ${pTitle}`;
-        description =
-          `${contentSnippet}\n\n` +
-          `Date de publication : ${date}\n` +
-          (author ? `Auteur.rice : ${author}\n` : "") +
-          `Source : ${link}` +
-          (duplicateSources ? `\nAussi visible sur : ${duplicateSources.join(", ")}` : "");
+        description = getPublicationDescription(data);
         color = getColorForSourceType(type);
         break;
       }

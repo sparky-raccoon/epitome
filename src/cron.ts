@@ -86,14 +86,17 @@ const initCronJob = async (client: Client) => {
         if (testChannel && testChannel.type === ChannelType.GuildText) {
           const filters = await FirestoreChannel.getFilters(channelId);
           const noFiltersDefined = filters.length === 0;
-          const someFiltersMatch = filters.some((f) => {
+          const someFiltersMatch = filters.filter((f) => {
             const regex = new RegExp(`[\\s,;.\\-_'"]${f}[\\s,;.\\-_'"]`, "i");
             return regex.test(pub.title) || regex.test(pub.contentSnippet);
           });
 
-          if (noFiltersDefined || someFiltersMatch) {
+          if (noFiltersDefined || someFiltersMatch.length > 0) {
             logger.info(`Nouvelle publication sur ${testChannel.id}: ${pub.title}`)
-            const message = getMessage(Message.POST, pub);
+            const message = getMessage(Message.POST, {
+              ...pub,
+              ...(someFiltersMatch.length > 0 ? { filters: someFiltersMatch } : {})
+            });
             await testChannel.send(message[0]);
           }
         }

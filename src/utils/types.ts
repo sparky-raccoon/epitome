@@ -15,6 +15,7 @@ interface Publication {
   author?: string;
   sourceId: string;
   duplicateSources?: string[];
+  filters?: string[];
 }
 
 const isSource = (source: unknown): source is Source => {
