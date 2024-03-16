@@ -105,7 +105,7 @@ const initCronJob = async (client: Client) => {
   };
 
   checkAndPost();
-  schedule("0 */4 * * *", () => checkAndPost());
+  schedule("0 */1 * * *", () => checkAndPost());
 };
 
 export default initCronJob;
