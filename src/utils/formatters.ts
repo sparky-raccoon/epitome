@@ -70,11 +70,19 @@ const formatTagListToString = (list: string[]): string => {
 
 const getPublicationDescription = (publication: Publication): string => {
   const { contentSnippet, date, author, link, duplicateSources, filters } = publication;
+  let duplicateSourceSection = "";
+  if (duplicateSources) {
+    const first = duplicateSources[0];
+    const length = duplicateSources.length;
+    duplicateSourceSection = `\nAussi visible sur : ${first}` +
+      (length > 1 ? ` et ${length - 1} autres sources suivies` : "");
+  }
+
   return `${contentSnippet}\n\n` +
     `Date de publication : ${date}\n` +
     (author ? `Auteur.rice : ${author}\n` : "") +
     `Source : ${link}` +
-    (duplicateSources ? `\nAussi visible sur : ${duplicateSources.join(", ")}` : "") +
+    duplicateSourceSection +
     (filters ? `\nFiltres concernés : ${filters.join(", ")}` : "");
 };
 
