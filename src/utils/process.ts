@@ -7,6 +7,7 @@ import { reply, editReply } from "@/utils/replier";
 import FirestoreSource, { FSource } from "@/bdd/collections/source";
 import FirestoreChannel from "@/bdd/collections/channel";
 import { Source } from "@/utils/types";
+import * as Sentry from "@sentry/node";
 
 const TIMEOUT = 60000;
 
@@ -88,6 +89,7 @@ class Process {
 
       this.terminate(this.interaction.user.id);
     } catch (err) {
+      Sentry.captureException(err);
       if (err instanceof Error) await this.error(err.message);
       else if (typeof err === "string") await this.error(err);
     }
@@ -136,6 +138,7 @@ class Process {
 
       this.terminate(this.interaction.user.id);
     } catch (err) {
+      Sentry.captureException(err);
       if (err instanceof Error) await this.error(err.message);
       else if (typeof err === "string") await this.error(err);
     }
@@ -179,6 +182,7 @@ class Process {
 
       this.terminate(this.interaction.user.id);
     } catch (err) {
+      Sentry.captureException(err);
       if (err instanceof Error) await this.error(err.message);
       else if (typeof err === "string") await this.error(err);
     }
@@ -200,6 +204,7 @@ class Process {
 
       this.terminate(this.interaction.user.id);
     } catch (err) {
+      Sentry.captureException(err);
       if (err instanceof Error) await this.error(err.message);
       else if (typeof err === "string") await this.error(err);
     }

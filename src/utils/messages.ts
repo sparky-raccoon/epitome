@@ -23,6 +23,7 @@ import {
 import { confirmOrCancelButton } from "@/components/confirm-button";
 import { FSource } from "@/bdd/collections/source";
 import { Source } from "@/utils/types";
+import * as Sentry from "@sentry/node";
 
 const getColorForSourceType = (sourceType: string): ColorResolvable => {
   switch (sourceType) {
@@ -247,6 +248,7 @@ const getMessage = (type: Message, data?: MessageData): any => {
     } else result.push(buildDiscordMessage(true, { title, description, color, imageUrl, component }));
     return result;
   } catch (err) {
+    Sentry.captureException(err);
     console.error(err);
     return buildDiscordMessage(true, {
       title: "Erreur",
