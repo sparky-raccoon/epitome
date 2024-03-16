@@ -36,7 +36,7 @@ class Process {
 
   async addSource() {
     try {
-      await this.interaction.deferReply();
+      await this.interaction.deferReply({ ephemeral: true });
 
       const { guildId, channelId } = this.interaction;
       const sources = this.interaction.options
@@ -95,7 +95,7 @@ class Process {
 
   async addFilter() {
     try {
-      await this.interaction.deferReply();
+      await this.interaction.deferReply({ ephemeral: true });
 
       const { guildId, channelId } = this.interaction;
       const tags = this.interaction.options
@@ -143,7 +143,7 @@ class Process {
 
   async delete() {
     try {
-      await this.interaction.deferReply();
+      await this.interaction.deferReply({ ephemeral: true });
 
       const { guildId, channelId, options } = this.interaction;
       const name = options.getString("nom");
@@ -189,7 +189,7 @@ class Process {
       const { guildId, channelId } = this.interaction;
       if (!guildId || !channelId) throw new Error(INTERNAL_ERROR);
 
-      await this.interaction.deferReply();
+      await this.interaction.deferReply({ ephemeral: true });
 
       const sourceList = await FirestoreSource.getWithChannelId(channelId)
       const filterList = await FirestoreChannel.getFilters(channelId)
