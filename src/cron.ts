@@ -7,6 +7,7 @@ import { Message } from "@/utils/constants";
 import { getMessage } from "@/utils/messages";
 import FirestoreSource, { FSource } from "@/bdd/collections/source";
 import FirestoreChannel from "@/bdd/collections/channel";
+import * as Sentry from "@sentry/node";
 
 const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
   logger.info("Parsing RSS feeds");
@@ -17,7 +18,15 @@ const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
     const { id: sourceId, name, url, lastParsedAt } = source;
     if (!sourceId) continue;
 
-    const feed = await parser.parseURL(url);
+    let feed;
+    try {
+      feed = await parser.parseURL(url);
+    } catch (err) {
+      logger.error(`Error parsing ${url}`);
+      Sentry.captureException(err);
+      continue;
+    }
+
     const items = feed.items;
     let lastParsedAtShouldBeUpdated = false;
 
