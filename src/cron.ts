@@ -45,7 +45,11 @@ const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
       if (!lastParsedAt || (new Date(lastParsedAt).getTime() < pubDateMs)) {
         lastParsedAtShouldBeUpdated = true;
 
-        const duplicateIndex = publications.findIndex((p) => p.title === title);
+        const duplicateIndex = publications.findIndex((p) => {
+          return p.title === title ||
+            p.contentSnippet === contentSnippet ||
+            p.link === link;
+        });
         if (duplicateIndex >= 0) {
           const duplicate = publications[duplicateIndex];
           publications[duplicateIndex] = {
