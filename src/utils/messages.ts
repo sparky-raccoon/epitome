@@ -66,15 +66,18 @@ const buildDiscordMessage = (
   }
 ) => {
   const { title, description, color, imageUrl, component } = messageData;
-  const embed: EmbedBuilder = new EmbedBuilder().setColor(color).setTitle(title);
-  if (description) embed.setDescription(description);
+  const embed: EmbedBuilder = new EmbedBuilder().setColor(color).setTitle(title)
 
   if (isFirstEntry) {
     if (imageUrl) embed.setImage(imageUrl);
+    if (description) embed.setDescription(description);
     return component
       ? { embeds: [embed], components: [component], ephemeral: true }
       : { embeds: [embed], components: [], ephemeral: true };
-  } else return { embeds: [embed], components: [], ephemeral: true };
+  } else {
+    if (description) embed.setDescription(description);
+    return { embeds: [embed], components: [], ephemeral: true };
+  }
 };
 
 // FIXME: somehow functions overloads are not working here
@@ -83,7 +86,7 @@ const getMessage = (type: Message, data?: MessageData): any => {
   let color: ColorResolvable = "#ffffff";
   let title = "✸ ";
   let description = "";
-  const imageUrl = "";
+  let imageUrl = "";
   let component: MessageComponent | undefined;
 
   try {
@@ -117,10 +120,12 @@ const getMessage = (type: Message, data?: MessageData): any => {
           type,
           name,
           title: pTitle,
+          imageUrl: pImageUrl,
         } = data;
         title += `[${name}] ${pTitle}`;
         description = getPublicationDescription(data);
         color = getColorForSourceType(type);
+        if (pImageUrl) imageUrl = pImageUrl;
         break;
       }
       case Message.LIST: {

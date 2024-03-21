@@ -78,7 +78,12 @@ const getPublicationDescription = (publication: Publication): string => {
       (length > 1 ? ` et ${length - 1} autres sources suivies` : "");
   }
 
-  return `${contentSnippet}\n\n` +
+  const MAX_CONTENT_SNIPPET_LENGTH = 800;
+  const shortenedContentSnippet = contentSnippet.length > MAX_CONTENT_SNIPPET_LENGTH ?
+    contentSnippet.slice(0, MAX_CONTENT_SNIPPET_LENGTH) + "..." :
+    contentSnippet;
+
+  return `${shortenedContentSnippet}\n\n` +
     `Date de publication : ${date}\n` +
     (author ? `Auteur.rice : ${author}\n` : "") +
     `Source : ${link}` +

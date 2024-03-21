@@ -12,8 +12,9 @@ interface Publication {
   contentSnippet: string;
   date: string;
   dateMs: number;
-  author?: string;
   sourceId: string;
+  imageUrl?: string;
+  author?: string;
   duplicateSources?: string[];
   filters?: string[];
 }

@@ -9,10 +9,16 @@ import FirestoreSource, { FSource } from "@/bdd/collections/source";
 import FirestoreChannel from "@/bdd/collections/channel";
 import * as Sentry from "@sentry/node";
 
+const ENABLE_IMAGES = false;
+
 const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
   logger.info("Parsing RSS feeds");
   const publications: Publication[] = [];
-  const parser = new Parser();
+  const parser = new Parser({
+    customFields: {
+      item: [['itunes:image', 'imageTag']],
+    }
+  });
 
   for (const source of sourceList) {
     const { id: sourceId, name, url, lastParsedAt } = source;
@@ -38,7 +44,7 @@ const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      const { pubDate, title, link, contentSnippet, creator: author } = item;
+      const { pubDate, title, link, contentSnippet, creator: author, imageTag } = item;
       if (!pubDate || !title || !link || !contentSnippet) continue;
 
       const pubDateMs = new Date(pubDate).getTime();
@@ -57,6 +63,11 @@ const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
             duplicateSources: [...(duplicate.duplicateSources || []), name],
           };
         } else {
+          let imageUrl;
+          if (ENABLE_IMAGES && imageTag) {
+            imageUrl = imageTag.$.href;
+          }
+
           publications.push({
             type: "rss",
             name,
@@ -65,6 +76,7 @@ const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
             contentSnippet,
             date: new Date(pubDate).toLocaleString("fr-FR"),
             dateMs: pubDateMs,
+            imageUrl,
             sourceId,
             author,
           });
@@ -106,11 +118,14 @@ const initCronJob = async (client: Client) => {
 
           if (noFiltersDefined || someFiltersMatch.length > 0) {
             logger.info(`Nouvelle publication sur ${testChannel.id}: ${pub.title}`)
-            const message = getMessage(Message.POST, {
+            const messages = getMessage(Message.POST, {
               ...pub,
               ...(someFiltersMatch.length > 0 ? { filters: someFiltersMatch } : {})
             });
-            await testChannel.send(message[0]);
+
+            for (let i = 0; i < messages.length; i++) {
+              await testChannel.send(messages[i]);
+            }
           }
         }
       }
