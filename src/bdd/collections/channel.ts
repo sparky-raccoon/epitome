@@ -42,9 +42,12 @@ export default class FirestoreChannel {
         }
     }
 
-    static addFilters = async (id: string, newFilters: string[]): Promise<void> => {
+    static addFilters = async (id: string, guildId: string, newFilters: string[]): Promise<void> => {
         const channel = await FirestoreChannel.getWithId(id);
-        if (!channel) return;
+        if (!channel) {
+            await FirestoreChannel.add({ id, guildId, filters: newFilters });
+            return;
+        }
 
         const filters = [...channel.filters, ...newFilters];
         await setDoc(doc(db, "channels", id), { ...channel, filters });

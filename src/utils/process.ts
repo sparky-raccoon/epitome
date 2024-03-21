@@ -131,7 +131,7 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
-        await FirestoreChannel.addFilters(channelId, nonDuplicates);
+        await FirestoreChannel.addFilters(channelId, guildId, nonDuplicates);
         message = getMessage(Message.ADD_SUCCESS_TAG);
         await confirmInteraction.update(message[0]);
       } else this.cancel(this.interaction);
