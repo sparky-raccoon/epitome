@@ -69,7 +69,7 @@ const buildDiscordMessage = (
   const embed: EmbedBuilder = new EmbedBuilder().setColor(color).setTitle(title)
 
   if (isFirstEntry) {
-    if (imageUrl) embed.setImage(imageUrl);
+    if (imageUrl) embed.setThumbnail(imageUrl);
     if (description) embed.setDescription(description);
     return component
       ? { embeds: [embed], components: [component], ephemeral: true }

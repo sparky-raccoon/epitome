@@ -9,7 +9,7 @@ import FirestoreSource, { FSource } from "@/bdd/collections/source";
 import FirestoreChannel from "@/bdd/collections/channel";
 import * as Sentry from "@sentry/node";
 
-const ENABLE_IMAGES = false;
+const ENABLE_IMAGES = true;
 
 const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
   logger.info("Parsing RSS feeds");
