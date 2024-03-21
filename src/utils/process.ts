@@ -1,6 +1,6 @@
-import { ChatInputCommandInteraction, ComponentType } from "discord.js";
+import { Client, ChatInputCommandInteraction, ComponentType } from "discord.js";
 import { Command, Message, INTERNAL_ERROR, BUTTON_CONFIRM_ID } from "@/utils/constants";
-import { getRssNameFromUrl } from "@/utils/parser";
+import { getRssInfoFromUrl } from "@/utils/parser";
 import { getMessage } from "@/utils/messages";
 import logger from "@/utils/logger";
 import { reply, editReply } from "@/utils/replier";
@@ -8,14 +8,22 @@ import FirestoreSource, { FSource } from "@/bdd/collections/source";
 import FirestoreChannel from "@/bdd/collections/channel";
 import { Source } from "@/utils/types";
 import * as Sentry from "@sentry/node";
+import { getRssPubs, getFilteredPubsByChannel, publish } from "@/utils/publisher";
+import { Publication } from "@/utils/types";
 
 const TIMEOUT = 60000;
 
 class Process {
+  client: Client;
   interaction: ChatInputCommandInteraction;
   terminate: (userId: string) => void;
 
-  constructor(interaction: ChatInputCommandInteraction, terminate: (userId: string) => void) {
+  constructor(
+    client: Client,
+    interaction: ChatInputCommandInteraction,
+    terminate: (userId: string) => void
+  ) {
+    this.client = client;
     this.interaction = interaction;
     this.terminate = terminate;
 
@@ -49,6 +57,7 @@ class Process {
 
       const duplicates: FSource[] = []
       const nonDuplicates: (FSource | Source)[] = []
+      const feeds = [];
       for (const s of sources) {
         const { url } = s
         const existing = await FirestoreSource.getWithUrl(url);
@@ -56,8 +65,12 @@ class Process {
           if (existing.channels.includes(channelId)) duplicates.push(existing);
           else nonDuplicates.push(existing);
         } else {
-          const name = await getRssNameFromUrl(url);
-          if (name) nonDuplicates.push({ type: 'rss', name, url });
+          const feed = await getRssInfoFromUrl(url);
+          const name = feed?.title
+          if (name) {
+            nonDuplicates.push({ type: 'rss', name, url });
+            feeds.push(feed);
+          }
         }
       }
 
@@ -81,10 +94,31 @@ class Process {
       });
 
       if (confirmInteraction.customId === BUTTON_CONFIRM_ID) {
+        const newSources: FSource[] = [];
         await FirestoreChannel.add({ id: channelId, guildId, filters: [] });
-        for (const source of nonDuplicates) await FirestoreSource.add(source, channelId);
+        for (const source of nonDuplicates) {
+          const newSource = await FirestoreSource.add(source, channelId);
+          newSources.push(newSource);
+        }
+
         message = getMessage(Message.ADD_SUCCESS_SOURCE);
-        await confirmInteraction.update(message[0]);
+        const response = await confirmInteraction.update(message[0]);
+        const confirmInteractionRunCheck = await response.awaitMessageComponent({
+          time: TIMEOUT,
+          componentType: ComponentType.Button,
+        });
+
+        if (confirmInteractionRunCheck.customId === BUTTON_CONFIRM_ID) {
+          message = getMessage(Message.ADD_SUCCESS_SOURCE_PUB_YES);
+          await confirmInteractionRunCheck.update(message[0]);
+
+          const publications: Publication[] = await getRssPubs(newSources);
+          const filteredPubsByChannel = await getFilteredPubsByChannel(publications, newSources);
+          await publish(this.client, filteredPubsByChannel);
+        } else {
+          message = getMessage(Message.ADD_SUCCESS_SOURCE_PUB_NO);
+          await confirmInteractionRunCheck.update(message[0]);
+        }
       } else this.cancel(this.interaction);
 
       this.terminate(this.interaction.user.id);

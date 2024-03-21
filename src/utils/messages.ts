@@ -165,7 +165,19 @@ const getMessage = (type: Message, data?: MessageData): any => {
         title += ADD_SOURCE_TITLE + " effectif";
         description =
           `Tu retrouveras celle-ci parmi la liste des sources ` +
-          `précédemment configurées pour ce salon avec la commande \`/list\``;
+          `précédemment configurées pour ce salon avec la commande \`/list\`.\n\n` +
+          `Souhaites-tu retourner les dernières publications associées à cette source (sur la base des filtres configurés dans ce salon) ?`;
+        component = confirmOrCancelButton("Oui", "Non");
+        break;
+      }
+      case Message.ADD_SUCCESS_SOURCE_PUB_YES: {
+        title += ADD_SOURCE_TITLE + " effectif";
+        description = "Voici les dernières publications associées à cette source :";
+        break;
+      }
+      case Message.ADD_SUCCESS_SOURCE_PUB_NO: {
+        title += ADD_SOURCE_TITLE + " effectif";
+        description = "Fin de la procédure !";
         break;
       }
       case Message.ADD_SUCCESS_TAG: {

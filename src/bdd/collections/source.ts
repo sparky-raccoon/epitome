@@ -16,18 +16,22 @@ const isFSource = (source: unknown): source is FSource => {
 
 export { FSource }
 export default class FirestoreSource {
-    static add = async (source: Source | FSource, channelId: string): Promise<void> => {
+    static add = async (source: Source | FSource, channelId: string): Promise<FSource> => {
+        let newSource: FSource;
         if (isFSource(source)) {
             const channels = [...source.channels, channelId];
-            await setDoc(doc(db, "sources", source.id), { ...source, channels });
+            newSource = { ...source, channels }
+            await setDoc(doc(db, "sources", source.id), newSource);
         } else {
             const id = uuidv4();
-            await setDoc(doc(db, "sources", id), {
+            newSource = {
                 ...source,
                 id,
                 channels: [channelId]
-            });
+            }
+            await setDoc(doc(db, "sources", id), newSource);
         }
+        return newSource;
     }
 
     static getWithUrl = async (url :string): Promise<FSource | null> => {

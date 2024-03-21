@@ -41,7 +41,7 @@ const initDiscordClient = (
 
     const flows: { [userId: string]: Process } = {};
     const cleanup = (userId: string) => delete flows[userId];
-    client.on(Events.InteractionCreate, async (interaction) => {
+    client.on(Events.InteractionCreate, async (interaction): Promise<void> => {
       const userId = interaction.user.id;
       if (interaction.isChatInputCommand()) {
         if (interaction.commandName === Command.HELP) {
@@ -49,7 +49,7 @@ const initDiscordClient = (
         } else {
           if (!flows[userId]) {
             if (interaction.commandName !== Command.CANCEL) {
-              flows[userId] = new Process(interaction, cleanup);
+              flows[userId] = new Process(client, interaction, cleanup);
             } else {
               await reply(
                 interaction,

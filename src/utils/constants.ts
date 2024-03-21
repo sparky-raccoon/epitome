@@ -13,6 +13,8 @@ enum Message {
   POST = "post",
   ADD_CONFIRM = "add_confirm",
   ADD_SUCCESS_SOURCE = "add_success_source",
+  ADD_SUCCESS_SOURCE_PUB_YES = "add_success_source_pub_yes",
+  ADD_SUCCESS_SOURCE_PUB_NO = "add_success_source_pub_no",
   ADD_SUCCESS_TAG = "add_success_tag",
   ADD_ALREADY_EXISTS = "add_already_exists",
   ADD_NO_VALID_URL = "add_no_valid_url",
