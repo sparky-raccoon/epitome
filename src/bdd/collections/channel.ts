@@ -34,12 +34,13 @@ export default class FirestoreChannel {
         return channels;
     }
 
-    static delete = async (id: string, failSilently = false): Promise<void> => {
-        try {
-            await deleteDoc(doc(db, "channels", id));
-        } catch (err) {
-            if (!failSilently) throw err;
+    static delete = async (id: string, isSoftDelete: boolean): Promise<void> => {
+        if (isSoftDelete) {
+            const filters = await FirestoreChannel.getFilters(id);
+            if (filters.length !== 0) return
         }
+
+        await deleteDoc(doc(db, "channels", id));
     }
 
     static addFilters = async (id: string, guildId: string, newFilters: string[]): Promise<void> => {

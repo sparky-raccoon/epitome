@@ -76,13 +76,14 @@ export default class FirestoreSource {
     }
 
     static removeChannelFromList = async (channelId: string, sourceId?: string): Promise<void> => {
+        const removeOnSingleSource = !!sourceId;
         const q = query(collection(db, "sources"), where("channels", "array-contains", channelId));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return;
 
         const removals: Promise<void>[] = [];
         querySnapshot.forEach((s) => {
-            if (sourceId && s.id !== sourceId) return;
+            if (removeOnSingleSource && s.id !== sourceId) return;
 
             const source = s.data() as FSource;
             const channels = source.channels.filter((c: string) => c !== channelId);
@@ -93,7 +94,8 @@ export default class FirestoreSource {
 
         await Promise.all(removals);
         if (!sourceId || removals.length === querySnapshot.size) {
-            await FirestoreChannel.delete(channelId);
+            const isSoftDelete = removeOnSingleSource;
+            await FirestoreChannel.delete(channelId, isSoftDelete);
         }
     }
 
