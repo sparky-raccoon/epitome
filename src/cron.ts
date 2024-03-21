@@ -16,7 +16,10 @@ const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
   const publications: Publication[] = [];
   const parser = new Parser({
     customFields: {
-      item: [['itunes:image', 'imageTag']],
+      item: [
+        ['itunes:image', 'imageTag'],
+        ['media:content', 'imageTag']
+      ],
     }
   });
 
@@ -65,7 +68,7 @@ const parseRssFeeds = async (sourceList: FSource[]): Promise<Publication[]> => {
         } else {
           let imageUrl;
           if (ENABLE_IMAGES && imageTag) {
-            imageUrl = imageTag.$.href;
+            imageUrl = imageTag.$.href || imageTag.$.url;
           }
 
           publications.push({
