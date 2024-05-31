@@ -8,6 +8,7 @@ import { Message } from "@/utils/constants";
 import { getMessage } from "@/utils/messages";
 import * as Sentry from "@sentry/node";
 import { Client, ChannelType } from "discord.js";
+import CacheManager from "@/utils/cacher";
 
 const getRssPubs = async (sourceList: FSource[]): Promise<Publication[]> => {
     logger.info("Parsing RSS feeds");
@@ -130,6 +131,23 @@ const getFilteredPubsByChannel = async (publications: Publication[], sources: FS
     return pubsByChannels;
 }
 
+const getNonDuplicatePubs = (pubsByChannel: { [channelId: string]: Publication[] }) => {
+    const nonDuplicatePubs = { ...pubsByChannel };
+
+    for (const channelId of Object.keys(pubsByChannel)) {
+        nonDuplicatePubs[channelId] = pubsByChannel[channelId]
+            .filter((pub) => {
+                return !CacheManager.has(channelId, pub.title);
+            });
+    }
+
+    const originalCount = Object.values(pubsByChannel).reduce((acc, pubs) => acc + pubs.length, 0);
+    const filteredCount = Object.values(nonDuplicatePubs).reduce((acc, pubs) => acc + pubs.length, 0);
+    logger.info(`Filtered ${originalCount - filteredCount} duplicate publications`);
+
+    return nonDuplicatePubs;
+}
+
 const publish = async (client: Client, pubsByChannel: { [channelId: string]: Publication[] }) => {
     const channelIds = Object.keys(pubsByChannel);
     for (const channelId of channelIds) {
@@ -137,6 +155,7 @@ const publish = async (client: Client, pubsByChannel: { [channelId: string]: Pub
       if (testChannel && testChannel.type === ChannelType.GuildText) {
         const pubs = pubsByChannel[channelId];
         for (const pub of pubs) {
+          CacheManager.set(channelId, pub.title);
           const messages = getMessage(Message.POST, pub);
           for (let i = 0; i < messages.length; i++) {
             await testChannel.send(messages[i]);
@@ -146,4 +165,4 @@ const publish = async (client: Client, pubsByChannel: { [channelId: string]: Pub
     }
 }
 
-export { getRssPubs, getFilteredPubsByChannel, publish }
+export { getRssPubs, getNonDuplicatePubs, getFilteredPubsByChannel, publish }
